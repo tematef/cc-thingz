@@ -1,7 +1,7 @@
 ---
 name: backlog
 description: Read, work, and maintain a Git repo's deferred-work items in docs/backlog/, one file per item. Use when the user says "backlog", "check backlog", "what's on my backlog", "work the backlog", "address the backlog", "add to backlog", "clean up backlog", or when a review or task produced items that are real but not being fixed now. Owns the item format and the create-then-delete lifecycle.
-allowed-tools: Read, Edit, Write, Bash, Grep, Glob, AskUserQuestion
+allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Backlog
@@ -66,7 +66,7 @@ decided against is the same operation with a different reason.
 ## Briefing an item
 
 Both argument forms below put the same four things on screen before asking anything about an item, as
-ordinary output rather than inside the `AskUserQuestion`. The widget covers roughly five lines above
+ordinary output rather than inside the `ask_question`. The widget covers roughly five lines above
 itself, so the question text still names the item and carries the one-line reason for its recommendation.
 
 - **Summary** — what the item is and why it was filed, in your own words, one or two sentences. Not the
@@ -98,7 +98,7 @@ as a slug; `all.md` is still an ordinary slug and unaffected.
    materiality rises because fixing it unblocks another, so the context runs both ways. The serial flow
    decides one item at a time, so a relationship is context for a question rather than a joint decision.
    For a blocker outside the backlog, recommend leaving the item and name the blocker.
-3. Take the items ONE AT A TIME: print that item's briefing, ask about it alone with **AskUserQuestion**
+3. Take the items ONE AT A TIME: print that item's briefing, ask about it alone with **ask_question**
    with the recommended disposition first, carry out the answer, and only then move to the next. Never
    brief several items and ask afterwards — a batch of briefings is a wall of text with no decision
    attached to any of it, and the answer to one item routinely changes the next. Number them, `item N of
@@ -133,7 +133,7 @@ instead of guessing at the nearest name.
 3. Report every item, one line each — `yes` first, then `later`, then `no`, oldest `added` first within
    each group. Include `where` for the items that have one. Do not editorialize; the item already carries
    its reasoning.
-4. Offer concrete actions with **AskUserQuestion**, never prose, with a recommendation first:
+4. Offer concrete actions with **ask_question**, never prose, with a recommendation first:
    - **fix a named item now** — name the specific item in the option label, not "fix something";
    - **drop a named item** — a `no` whose rationale has stopped earning its place;
    - **leave it** — report only, nothing changes.
@@ -181,7 +181,7 @@ When the files are written, read `git diff --cached --name-only` before offering
 been staged yet at that point, so anything it lists is pre-existing — including another backlog file from
 an earlier run. If it lists anything at all, do not commit: report what is staged and let the user resolve
 it, because a plain `git commit` would sweep it in alongside the item. With an empty index, offer the next
-step with **AskUserQuestion**, staging the exact paths this invocation created or edited and not the
+step with **ask_question**, staging the exact paths this invocation created or edited and not the
 directory — an item bundled with the run's other changes violates the rule below. Never commit without that
 answer. Offer commit and push together: a backlog item is notes with no code in it, and unpushed it stays
 invisible from every other machine, so the push is part of filing rather than an upsell.

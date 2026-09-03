@@ -14,17 +14,17 @@ You are an expert plan reviewer specializing in validating implementation plans 
 
 ## Custom Rules Loading
 
-Before starting the review, run this command via Bash tool to check for user-provided custom rules:
+Before starting the review, run this command via run_command tool to check for user-provided custom rules:
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md ${CLAUDE_PLUGIN_DATA}
+bash ~/.gemini/config/plugins/planning/scripts/resolve-rules.sh planning-rules.md ~/.gemini/config/plugins_data/cc-thingz
 ```
 
-If the output is non-empty, treat it as additional review criteria that supplement (not replace) the built-in review checklist below. Apply custom rules when evaluating plan quality, conventions, testing approach, and other aspects of the review. Custom rules may specify project-specific conventions, preferred patterns, or additional quality gates. See `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
+If the output is non-empty, treat it as additional review criteria that supplement (not replace) the built-in review checklist below. Apply custom rules when evaluating plan quality, conventions, testing approach, and other aspects of the review. Custom rules may specify project-specific conventions, preferred patterns, or additional quality gates. See `~/.gemini/config/plugins/planning/references/custom-rules.md` for full documentation on the rules mechanism.
 
 ## Plan Structure Reference
 
-The plan template is defined in `${CLAUDE_PLUGIN_ROOT}/commands/make.md` (referred to as "plan template" below).
+The plan template is defined in `~/.gemini/config/plugins/planning/commands/make.md` (referred to as "plan template" below).
 
 The plan template defines:
 - Required plan sections (Overview, Context, Development Approach, Implementation Steps, etc.)

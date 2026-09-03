@@ -29,7 +29,7 @@ Interactive annotation-based code review using editor overlays.
 ### Step 1: Run the script
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-review/scripts/git-review.py [base_ref]
+~/.gemini/config/plugins/review/skills/git-review/scripts/git-review.py [base_ref]
 ```
 
 - No arguments: auto-detects uncommitted changes or branch vs default branch

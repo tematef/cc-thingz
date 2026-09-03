@@ -2,7 +2,7 @@
 name: pr
 description: Comprehensive PR/issue review - analyzes architecture, tests, identifies unrelated changes mixed in, drafts review comment or issue comment. Use when user asks to review a PR, check a PR, look at PR changes, or comment on an issue.
 argument-hint: '<pr-or-issue-number>'
-allowed-tools: Bash, Read, Grep, Glob, Write, Skill, AskUserQuestion, Task
+allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # PR Review Skill
@@ -67,7 +67,7 @@ COMMENT_END
 gh issue comment <number> --body-file /tmp/issue-comment.md
 ```
 
-Use AskUserQuestion before posting:
+Use ask_question before posting:
 ```
 question: "Post this comment to issue #<number>?"
 header: "Comment"
@@ -241,7 +241,7 @@ git worktree add "/tmp/pr-review-<number>" pr-<number>
 
 ### 2.2 Launch Analysis Subagent
 
-Use the **Task tool** with `subagent_type: "general-purpose"` to run the full analysis. Pass all context the subagent needs in the prompt:
+Use the **invoke_subagent with TypeName "self"` to run the full analysis. Pass all context the subagent needs in the prompt:
 
 ```
 prompt: |
@@ -306,7 +306,7 @@ The subagent returns a condensed report. This is what enters the main conversati
 
 Present the subagent's report to the user.
 
-Use AskUserQuestion to confirm next step:
+Use ask_question to confirm next step:
 
 ```
 question: "How would you like to proceed?"
@@ -431,9 +431,9 @@ Always display the complete draft review as a text block before asking:
 --- End Draft ---
 ```
 
-### Ask User via AskUserQuestion
+### Ask User via ask_question
 
-Use AskUserQuestion tool with these options:
+Use ask_question tool with these options:
 
 ```
 question: "Post this review to PR #<number>?"
@@ -558,7 +558,7 @@ User: "review pr 73"
 ```
 User: "review pr 95"
 → Phase 1: fetch metadata, +200/-30, 6 files
-→ Phase 1.5: [AskUserQuestion] "Review mode?" → user selects Quick
+→ Phase 1.5: [ask_question] "Review mode?" → user selects Quick
 → Q1: read diff, summarize: adds configurable tenant for auth
 → Q2: no obvious issues, tests included
 → Q3: draft and post "lgtm"
@@ -571,7 +571,7 @@ User: "review pr 89"
 → Phase 2: launch subagent → reads files, 2 test failures, open question
     about Section type change
 → Phase 3: present condensed report
-→ Phase 4: [AskUserQuestion] "Section type change: Accept typed approach?"
+→ Phase 4: [ask_question] "Section type change: Accept typed approach?"
   → User: "Accept"
 → User: "draft the review"
 → Phase 5: draft review noting test failures, user's acceptance of Section approach

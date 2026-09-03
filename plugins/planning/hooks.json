@@ -1,0 +1,11 @@
+{
+  "plan-annotate": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 scripts/plan-review-hook.py",
+        "timeout": 345600
+      }
+    ]
+  }
+}

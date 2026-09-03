@@ -1,7 +1,7 @@
 ---
 name: ask-codex
 description: Consult OpenAI Codex for investigation, debugging, or code review. Use when user explicitly asks to "ask codex", "check with codex", "codex review", or as a last resort when stuck after 4+ failed attempts at debugging, investigation, or bug fix and completely out of ideas. Codex is slow (2-5 min), so only escalate when truly stuck. Codex runs in read-only mode with full project access — it analyzes, we implement.
-allowed-tools: Bash, Read, Grep, Glob
+allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Ask Codex
@@ -41,10 +41,10 @@ Codex does NOT auto-load Claude Code's memory files — it only reads `AGENTS.md
 
 Build a focused prompt. Do NOT dump entire files — codex has full project access and can read them itself. Provide file paths and line references so codex knows where to look.
 
-**Prepend a memory-load preamble.** Codex auto-loads only `AGENTS.md`; it does NOT read Claude Code's memory files (`CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules/`, `~/.claude/CLAUDE.md`), so the project conventions Claude follows are invisible to Codex unless you tell it to read them. Prepend this line to the prompt:
+**Prepend a memory-load preamble.** Codex auto-loads only `AGENTS.md`; it does NOT read Claude Code's memory files (`CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules/`, `~/.gemini/config/CLAUDE.md`), so the project conventions Claude follows are invisible to Codex unless you tell it to read them. Prepend this line to the prompt:
 
 ```
-First read these project guidance files if present: <ABS_HOME>/.claude/CLAUDE.md, CLAUDE.md, CLAUDE.local.md, .claude/rules/
+First read these project guidance files if present: <ABS_HOME>/.gemini/config/CLAUDE.md, CLAUDE.md, CLAUDE.local.md, .agents/AGENTS.md
 ```
 
 - Resolve `<ABS_HOME>` to the **absolute** home path (run `echo $HOME`, e.g. `/home/<user>`) and write the literal path — do NOT leave the string `$HOME` in the prompt. Whether `$HOME` expands depends on how the prompt is passed to Codex, and Codex may open the file with a non-shell tool that never expands it, so only a literal absolute path is reliable.
@@ -173,9 +173,7 @@ codex exec -m gpt-5.5 \
 ```
 
 **Execution rules:**
-- Always end the invocation with `< /dev/null` (as shown). `codex exec` reads stdin to append a `<stdin>` block even when the prompt is a positional arg, so an inherited open pipe (common under a background launch) never closes and codex blocks forever on "Reading additional input from stdin…"; `/dev/null` gives immediate EOF.
-- Always use `run_in_background: true` in Bash tool
-- Monitor with BashOutput every 15-20 seconds
+- Launch in background via run_command with a small WaitMsBeforeAsync (e.g. 2000ms). Do not poll in a loop — wait for the background task completion notification (or check status with manage_task if needed)
 - Be patient during reasoning phase (1-3 minutes of silence is normal)
 - Total timeout: 10 minutes for standard, 15 for complex
 

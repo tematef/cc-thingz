@@ -1,11 +1,11 @@
 # Finalize prompt
 
-Use this for the finalize agent after all reviews pass (replace `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, and `${CLAUDE_PLUGIN_ROOT}`):
+Use this for the finalize agent after all reviews pass (replace `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, and `~/.gemini/config/plugins/planning`):
 
 ```
 Post-completion finalize step. Organize commits for merge.
 
-AUTONOMOUS MODE — NO HUMAN IS AVAILABLE: run unattended, NEVER ask the user anything (no AskUserQuestion, no pausing for input or approval). On a rebase conflict or a squash judgment call, resolve it yourself; if it is not safe to resolve, abort cleanly (git rebase --abort) and report — never wait for input.
+AUTONOMOUS MODE — NO HUMAN IS AVAILABLE: run unattended, NEVER ask the user anything (no ask_question, no pausing for input or approval). On a rebase conflict or a squash judgment call, resolve it yourself; if it is not safe to resolve, abort cleanly (git rebase --abort) and report — never wait for input.
 
 Plan file: PLAN_FILE_PATH (read for validation commands)
 
@@ -26,11 +26,11 @@ STEP 3 - VERIFY:
 - If anything fails, fix and re-run
 
 STEP 4 - LOG PROGRESS:
-Log results: bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "finalize: completed"
+Log results: bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "finalize: completed"
 Then pipe details: echo "- rebase: <success/failed>
 - commits before: N, after: M
 - squashed: <list of squashed commits, or none>
-- validation: <passed/failed>" | bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH
+- validation: <passed/failed>" | bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH
 IMPORTANT: Use ONLY the append-progress.sh script.
 
 STEP 5 - PLAN DEVIATION ANALYSIS:

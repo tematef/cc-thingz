@@ -42,13 +42,16 @@ assert_rc() {
 echo "testing PLANNING_DISABLE_REVDIFF"
 echo "================================"
 
-# test 1: hook route returns an "ask" response with the disabled reason, without
-# needing CLAUDE_PLUGIN_ROOT or any overlay terminal (guard fires before both)
+# test 1: hook route returns an "allow" response with the disabled reason, without
+# needing plugin_root or any overlay terminal (guard fires before both)
 echo ""
 echo "test 1: hook route skips review when disabled"
-event='{"tool_input":{"plan":"# Plan\n- task 1\n"}}'
+TMP_ARTIFACT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/plan-hook-test-XXXXXX")"
+printf '# Plan\n- task 1\n' > "$TMP_ARTIFACT_DIR/implementation_plan.md"
+event="{\"artifactDirectoryPath\":\"$TMP_ARTIFACT_DIR\"}"
 out="$(printf '%s' "$event" | PLANNING_DISABLE_REVDIFF=1 python3 "$HOOK" 2>/dev/null)"
-assert_contains "hook returns ask decision" '"permissionDecision": "ask"' "$out"
+rm -rf "$TMP_ARTIFACT_DIR"
+assert_contains "hook returns allow decision" '"decision": "allow"' "$out"
 assert_contains "hook reports disabled reason" "PLANNING_DISABLE_REVDIFF" "$out"
 
 # test 2: launcher route exits 0 with empty output (no overlay opened) when disabled

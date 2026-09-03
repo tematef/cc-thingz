@@ -1,7 +1,7 @@
 ---
 name: last-tag
 description: Show commits since the last tag in a formatted table. Use when user asks "what changed since last release", "commits since last tag", "last-tag", "what's new", or wants to see recent unreleased changes.
-allowed-tools: Bash, AskUserQuestion
+allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Last Tag - Commits Since Last Release
@@ -17,7 +17,7 @@ Show commits since the last tag in a formatted table with optional details.
 
 ## Workflow
 
-**Important**: Avoid `$()` command substitution in Bash tool - use sequential steps.
+**Important**: Avoid `$()` command substitution in run_command - use sequential steps.
 
 1. Fetch tags from remote and get the last tag:
 ```bash
@@ -73,18 +73,14 @@ No commits since this tag
 
 ## Interactive Details
 
-After displaying the table, use AskUserQuestion:
+After displaying the table, use ask_question:
 
-```
+```yaml
 question: "Show commit details?"
-header: "Details"
 options:
-  - label: "All commits"
-    description: "Show full details for each commit"
-  - label: "None"
-    description: "Skip details"
-  - label: "Specific commit"
-    description: "Enter commit hash to inspect"
+  - "(Recommended) All commits - Show full details for each commit"
+  - "None - Skip details"
+  - "Specific commit - Enter commit hash to inspect"
 ```
 
 **If "All commits"**: For each commit, run:

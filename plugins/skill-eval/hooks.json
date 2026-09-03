@@ -1,0 +1,10 @@
+{
+  "skill-eval": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "sh skill-forced-eval-hook.sh"
+      }
+    ]
+  }
+}
