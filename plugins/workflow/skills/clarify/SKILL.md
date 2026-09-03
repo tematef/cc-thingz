@@ -1,7 +1,7 @@
 ---
 name: clarify
 description: This skill should be used when user appears confused, frustrated, or shows misalignment between expectations and reality. Triggers on phrases like "I don't understand", "this doesn't make sense", "confused", "wait, shouldn't it...", "why is this happening", "I thought X did Y", contradictory statements, or frustration signals. Analyzes the confusion, explains the actual behavior, and determines if there's a real issue to address.
-allowed-tools: EnterPlanMode, AskUserQuestion
+allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Clarify
@@ -112,7 +112,7 @@ Keep explanations:
 
 **D) Documentation issue**
 - System works correctly but docs are misleading/missing
-- Resolution: suggest updating docs, may use EnterPlanMode
+- Resolution: suggest updating docs, may create an implementation plan artifact
 
 **E) Configuration issue**
 - System can do what user expects but isn't configured for it
@@ -144,10 +144,10 @@ User must understand the magnitude before deciding to proceed.
 
 #### Step 2: Present Options (if multiple approaches exist)
 
-When there are multiple valid solutions, use **AskUserQuestion** tool to present choices:
+When there are multiple valid solutions, use **ask_question** tool to present choices:
 
 - List 2-4 options with clear trade-off descriptions
-- Put recommended option first with "(Recommended)" suffix
+- Put recommended option first with "(Recommended)" prefix
 - Include "Do nothing" as an option when relevant:
   - Issue is cosmetic or low-impact
   - Workaround exists
@@ -155,14 +155,14 @@ When there are multiple valid solutions, use **AskUserQuestion** tool to present
   - Issue is edge case that rarely occurs
 - Let user choose the approach
 
-#### Step 3: Proceed to Plan Mode
+#### Step 3: Proceed to Planning
 
 After user confirms or selects an approach:
 
-1. **Use EnterPlanMode** - Create implementation plan for the chosen approach
+1. **Create an implementation plan artifact** (`implementation_plan.md`) or use `/planning:make` for the chosen approach
 2. Plan should reflect the scope assessment from Step 1
 
-**CRITICAL**: Do not attempt to fix issues without planning. Always use EnterPlanMode for:
+**CRITICAL**: Do not attempt to fix issues without planning. Always create an implementation plan for:
 - Bug fixes
 - Design changes
 - Missing features
@@ -185,9 +185,9 @@ After user confirms or selects an approach:
 [One of: Not an issue / Documentation issue / Real issue / Configuration issue]
 
 [If real issue]:
-This is a real issue that should be addressed. I recommend switching to plan mode to design a proper fix.
+This is a real issue that should be addressed. I recommend creating an implementation plan to design a proper fix.
 
-Should I enter plan mode to plan the solution?
+Should I create an implementation plan for the solution?
 ```
 
 ## Guidelines
@@ -210,5 +210,5 @@ Should I enter plan mode to plan the solution?
 **Fixing:**
 - **Investigate first, then determine outcome**
 - If it's a misunderstanding -> explain clearly with evidence
-- If it's a real issue -> proceed to plan mode for fix
-- **Use EnterPlanMode when investigation confirms a genuine bug/flaw**
+- If it's a real issue -> proceed to planning for fix
+- **Create an implementation plan when investigation confirms a genuine bug/flaw**

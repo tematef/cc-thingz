@@ -1,6 +1,6 @@
 # Task prompt for subagent
 
-Use this prompt when spawning each task subagent (replace `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `USER_RULES`, and `${CLAUDE_PLUGIN_ROOT}` with actual values):
+Use this prompt when spawning each task subagent (replace `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `USER_RULES`, and `~/.gemini/config/plugins/planning` with actual values):
 
 ```
 Read the plan file at PLAN_FILE_PATH. Find the FIRST Task section (### Task N: or ### Iteration N:) that has uncompleted checkboxes ([ ]).
@@ -15,7 +15,7 @@ Complete ALL checkboxes in that section, then STOP.
 Do NOT continue to the next section.
 
 AUTONOMOUS MODE — NO HUMAN IS AVAILABLE:
-You run unattended as part of an autonomous plan execution. NOBODY is watching to answer questions. NEVER ask the user anything — do NOT call AskUserQuestion, do NOT pause for input, do NOT stop to request a decision or approval. Asking blocks the entire run indefinitely.
+You run unattended as part of an autonomous plan execution. NOBODY is watching to answer questions. NEVER ask the user anything — do NOT call ask_question, do NOT pause for input, do NOT stop to request a decision or approval. Asking blocks the entire run indefinitely.
 
 When you hit a judgment call the plan does not spell out (e.g. "should this file be split?", "which name?", "one helper or two?"), DECIDE IT YOURSELF, in this order:
 1. the plan's stated intent and any explicit instruction in the Task section
@@ -39,22 +39,22 @@ STEP 2 - VALIDATE:
 STEP 3 - COMPLETE (after validation passes):
 - Edit PLAN_FILE_PATH and change [ ] to [x] for each checkbox you implemented in the current Task section
 - If Task sections are complete but Success criteria, Overview, or Context has [ ] items that the implementation satisfies, mark them [x] too
-- Commit all changes using the script: bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/stage-and-commit.sh "feat: <brief task description>" file1 file2 ...
+- Commit all changes using the script: bash ~/.gemini/config/plugins/planning/skills/exec/scripts/stage-and-commit.sh "feat: <brief task description>" file1 file2 ...
   List all changed files explicitly (source files, test files, plan file)
 
 STEP 4 - LOG PROGRESS (after commit):
-Log a header line: bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "task N: <title>"
+Log a header line: bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "task N: <title>"
 Then log the details using echo piped to the script:
 echo "- modified: <files>
 - implemented: <what was done>
 - tests: <what tests added, or why skipped>
-- validation: <what commands passed>" | bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH
+- validation: <what commands passed>" | bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH
 IMPORTANT: Use ONLY the append-progress.sh script for writing to the progress file. Do NOT use cat >>, echo >>, or heredocs directly.
 
 STEP 5 - LOG DECISIONS AND DEVIATIONS (only if any):
 If you made a judgment call the plan did not spell out, or your result deviates from the plan in any way, log EACH one as its own line so the orchestrator can report it to the user. One append per entry, using these exact markers:
-bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "[decision] task N: <what you decided> — <why: which lint rule / plan intent / convention drove it>"
-bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "[deviation] task N: <how the result differs from the plan> — <why>"
+bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "[decision] task N: <what you decided> — <why: which lint rule / plan intent / convention drove it>"
+bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "[deviation] task N: <how the result differs from the plan> — <why>"
 If there were none, skip this step. Do NOT invent entries — log only real judgment calls and real deviations.
 
 STOP after logging progress.

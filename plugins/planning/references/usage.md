@@ -84,7 +84,7 @@ Subagents in current Claude Code do not have the Agent tool — they cannot spaw
 
 ### Triggers
 - launched by make's "Auto review" option
-- usable as `subagent_type: "plan-review"` in Agent tool calls
+- usable as the Prompt for invoke_subagent with TypeName "self", Role "plan-review"
 
 ### What It Checks
 - problem definition and solution correctness

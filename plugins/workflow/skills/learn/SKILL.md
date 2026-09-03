@@ -1,7 +1,7 @@
 ---
 name: learn
 description: Update project CLAUDE.md with strategic knowledge discovered during this session — or CLAUDE.local.md when the discovery is per-developer/per-checkout and that file already exists. Defers to any project- or user-defined memory-placement guidance instead of overriding it. Use when user says "learn", "save knowledge", "update claude.md", "capture learnings", or at end of significant work sessions. Also used by commit skill for pre-commit knowledge capture.
-allowed-tools: Read, Edit, Glob, AskUserQuestion
+allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Learn
@@ -42,7 +42,7 @@ This skill writes to one of two files in the project root:
 
   **Counter-example:** *"We keep credentials in `~/.aws/credentials`"* mentions a user-home path but describes a team-wide convention — the path is illustrative, not per-developer state. Such notes belong in project CLAUDE.md. When in doubt about whether a discovery is genuinely personal, default to project CLAUDE.md.
 
-This skill never writes to the user's global `~/.claude/CLAUDE.md` (user memory) — only reads it to avoid duplicating cross-project knowledge.
+This skill never writes to the user's global `~/.gemini/config/CLAUDE.md` (user memory) — only reads it to avoid duplicating cross-project knowledge.
 
 **Default for ambiguous cases: project CLAUDE.md.** Leaking personal config into a committed file is a loud error that reviewers catch quickly; hiding project-wide knowledge in a gitignored personal file is a silent error that rots over time.
 
@@ -86,15 +86,15 @@ Ask yourself for each discovery:
 ## Workflow
 
 ### 1. Check for Existing Memory-Placement Guidance
-Before applying the routing rules below, scan the project's root `CLAUDE.md`, any `.claude/rules/*.md` files, the user's global `~/.claude/CLAUDE.md`, and any `~/.claude/rules/*.md` files for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `CLAUDE.md` / `CLAUDE.local.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
+Before applying the routing rules below, scan the project's root `CLAUDE.md`, any `.claude/rules/*.md` files, the user's global `~/.gemini/config/CLAUDE.md`, and any `~/.gemini/config/rules/*.md` files for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `CLAUDE.md` / `CLAUDE.local.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
 
 ### 2. Check Existing Memory Content
-Read the current content of project `CLAUDE.md`, `CLAUDE.local.md` (if present), and the user's global `~/.claude/CLAUDE.md` to avoid duplication — including cross-project entries already captured in user memory.
+Read the current content of project `CLAUDE.md`, `CLAUDE.local.md` (if present), and the user's global `~/.gemini/config/CLAUDE.md` to avoid duplication — including cross-project entries already captured in user memory.
 
 ### 3. Early Exit if Nothing Found
 If no new strategic knowledge was discovered during this session:
 - Report "no new strategic knowledge to capture"
-- Do NOT use AskUserQuestion tool
+- Do NOT use ask_question tool
 - End the skill execution
 
 ### 4. Classify Each Discovery
@@ -108,9 +108,9 @@ Present discovered knowledge formatted for the chosen destination, tagging each 
 - Discovery 2
 ```
 
-### 6. User Confirmation with AskUserQuestion Tool
+### 6. User Confirmation with ask_question Tool
 
-**CRITICAL**: Use AskUserQuestion tool for granular selection of what to save.
+**CRITICAL**: Use ask_question tool for granular selection of what to save.
 
 Build options dynamically based on discoveries:
 - First option: "All knowledge" - save everything to its inferred destination
@@ -122,24 +122,18 @@ Example with 3 discoveries (2 project, 1 personal):
 ```yaml
 question: "Which knowledge should I save?"
 options:
-  - label: "All (3 items)"
-    description: "Save all discovered patterns to their inferred destinations"
-  - label: "Service discovery pattern → project CLAUDE.md"
-    description: "Project-wide convention for how modules find each other"
-  - label: "Local toolchain variant → CLAUDE.local.md"
-    description: "Per-checkout build runner override (only relevant on this machine)"
-  - label: "None"
-    description: "Skip saving, nothing worth keeping"
+  - "(Recommended) All (3 items) - Save all discovered patterns to their inferred destinations"
+  - "Service discovery pattern → project CLAUDE.md - Project-wide convention for how modules find each other"
+  - "Local toolchain variant → CLAUDE.local.md - Per-checkout build runner override (only relevant on this machine)"
+  - "None - Skip saving, nothing worth keeping"
 ```
 
 Example with 1 discovery:
 ```yaml
 question: "Save this knowledge?"
 options:
-  - label: "Yes → project CLAUDE.md"
-    description: "Save: [brief description of the discovery]"
-  - label: "No"
-    description: "Skip saving"
+  - "(Recommended) Yes → project CLAUDE.md - Save: [brief description of the discovery]"
+  - "No - Skip saving"
 ```
 
 After user selection:
@@ -153,6 +147,6 @@ After user selection:
 - Don't duplicate existing project CLAUDE.md, `CLAUDE.local.md`, or user CLAUDE.md content
 - Focus on patterns observed, not specific code written
 - Keep descriptions concise and actionable
-- MUST use AskUserQuestion tool for confirmation (not plain text questions)
+- MUST use ask_question tool for confirmation (not plain text questions)
 - If no knowledge found, exit early without asking
 - **Defer to project- or user-level memory-placement guidance discovered in step 1** — do not override existing conventions with this skill's defaults

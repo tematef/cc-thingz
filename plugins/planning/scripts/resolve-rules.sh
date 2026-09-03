@@ -4,7 +4,7 @@
 # e.g.: resolve-rules.sh planning-rules.md /path/to/plugin/data
 #
 # data-dir: plugin data directory path, passed from SKILL.md where
-# ${CLAUDE_PLUGIN_DATA} is text-substituted by the plugin framework.
+# ~/.gemini/config/plugins_data/cc-thingz is text-substituted by the plugin framework.
 # falls back to $CLAUDE_PLUGIN_DATA env var if not provided as argument.
 #
 # checks in order (first-found-wins, not merged):

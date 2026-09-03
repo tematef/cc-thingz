@@ -13,7 +13,7 @@ When both non-empty files exist, only the project-level file is used. Empty file
 
 ## Resolution
 
-Each skill runs `resolve-rules.sh planning-rules.md <data-dir>` via Bash at startup, where `<data-dir>` is the plugin data directory path passed from the skill content (text-substituted from `${CLAUDE_PLUGIN_DATA}`). The script falls back to the `$CLAUDE_PLUGIN_DATA` env var if no argument is provided. Outputs the first file found (project, then user) or empty output if neither exists.
+Each skill runs `resolve-rules.sh planning-rules.md <data-dir>` via Bash at startup, where `<data-dir>` is the plugin data directory path passed from the skill content (text-substituted from `~/.gemini/config/plugins_data/cc-thingz`). The script falls back to the `$CLAUDE_PLUGIN_DATA` env var if no argument is provided. Outputs the first file found (project, then user) or empty output if neither exists.
 
 ## Managing Rules
 

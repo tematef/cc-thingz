@@ -1,7 +1,7 @@
 ---
 name: new
 description: Use when user asks to create a release, cut a release, or publish a version. Auto-detects GitHub vs GitLab vs Gitea, calculates semantic version, generates release notes from PRs/MRs or commits, shows preview for confirmation before publishing.
-allowed-tools: Bash, AskUserQuestion
+allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Release Workflow
@@ -16,7 +16,7 @@ Creates GitHub, GitLab, or Gitea releases with auto-versioning and release notes
 
 ## Scripts
 
-Helper scripts in skill's `scripts/` directory (use `${CLAUDE_PLUGIN_ROOT}` for path resolution):
+Helper scripts in skill's `scripts/` directory (use `~/.gemini/config/plugins/release-tools` for path resolution):
 - `detect-platform.sh` - outputs `github`, `gitlab`, or `gitea`
 - `calc-version.sh <type>` - outputs new version (e.g., `v1.2.3`)
 - `get-notes.sh <platform>` - outputs release notes (PRs/MRs or commits)
@@ -35,7 +35,7 @@ is not a failure - show it to the user with the preview in Step 8 and carry on.
 
 ### Step 1: Ask Release Type
 
-Use AskUserQuestion tool to get release type:
+Use ask_question tool to get release type:
 
 ```json
 {
@@ -43,11 +43,11 @@ Use AskUserQuestion tool to get release type:
     "question": "What type of release is this?",
     "header": "Version",
     "options": [
-      {"label": "Hotfix", "description": "Bug fixes (1.2.3 → 1.2.4)"},
-      {"label": "Minor", "description": "New features (1.2.3 → 1.3.0)"},
-      {"label": "Major", "description": "Breaking changes (1.2.3 → 2.0.0)"}
+      "Hotfix - Bug fixes (1.2.3 → 1.2.4)",
+      "Minor - New features (1.2.3 → 1.3.0)",
+      "Major - Breaking changes (1.2.3 → 2.0.0)"
     ],
-    "multiSelect": false
+    "is_multi_select": false
   }]
 }
 ```
@@ -55,7 +55,7 @@ Use AskUserQuestion tool to get release type:
 ### Step 2: Detect Platform
 
 ```bash
-platform=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/new/scripts/detect-platform.sh)
+platform=$(bash ~/.gemini/config/plugins/release-tools/skills/new/scripts/detect-platform.sh)
 ```
 
 ### Step 3: Validate Prerequisites
@@ -79,7 +79,7 @@ last_tag=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "none
 ### Step 5: Calculate New Version
 
 ```bash
-new_version=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/new/scripts/calc-version.sh <release_type>)
+new_version=$(bash ~/.gemini/config/plugins/release-tools/skills/new/scripts/calc-version.sh <release_type>)
 ```
 
 Verify tag doesn't already exist:
@@ -92,7 +92,7 @@ fi
 ### Step 6: Generate Release Notes
 
 ```bash
-notes=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/new/scripts/get-notes.sh "$platform")
+notes=$(bash ~/.gemini/config/plugins/release-tools/skills/new/scripts/get-notes.sh "$platform")
 ```
 
 Script logic:
@@ -174,7 +174,7 @@ Release Notes:
 --------------
 ```
 
-Use AskUserQuestion tool to confirm:
+Use ask_question tool to confirm:
 
 ```json
 {
@@ -182,10 +182,10 @@ Use AskUserQuestion tool to confirm:
     "question": "Proceed with creating this release?",
     "header": "Release",
     "options": [
-      {"label": "Yes, publish", "description": "Create tag and publish release"},
-      {"label": "Cancel", "description": "Abort release"}
+      "(Recommended) Yes, publish - Create tag and publish release",
+      "Cancel - Abort release"
     ],
-    "multiSelect": false
+    "is_multi_select": false
   }]
 }
 ```

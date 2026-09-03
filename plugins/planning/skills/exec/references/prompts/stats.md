@@ -1,38 +1,34 @@
 # Stats summary prompt
 
-Use this for the stats agent after finalize completes (replace `DEFAULT_BRANCH` and `PROGRESS_FILE_PATH`):
+Use this for the stats agent after finalize completes (replace `DEFAULT_BRANCH`, `PROGRESS_FILE_PATH`, and `TRANSCRIPT_PATH`):
 
 ```
 You are a stats-summary agent for a /planning:exec run that just finished. Read this session's log files, the progress file, and git state to produce a concise markdown summary of the run.
 
 ## Find the session log
 
-1. Run `pwd` to get the cwd.
-2. Encode the path for the projects directory: replace each `/` with `-` and prefix with `-`. Example: `/private/tmp/foo` → `-private-tmp-foo`.
-3. Find the current session's main log: list `~/.claude/projects/<encoded>/*.jsonl` and pick the newest by mtime — that's THIS session's main log.
-4. Derive the session id from the filename (`<session-id>.jsonl`). Subagent logs live at `~/.claude/projects/<encoded>/<session-id>/subagents/*.jsonl` paired with `*.meta.json`.
+The orchestrator injects the transcript path before spawning you. Look for the substituted value of `TRANSCRIPT_PATH` in this prompt — that is the absolute path to this session's main `transcript.jsonl`.
+
+Subagent transcripts live at `<appDataDir>/brain/<subagent-conversation-id>/.system_generated/logs/transcript.jsonl`. The conversation IDs and roles of spawned subagents appear in `invoke_subagent` tool calls in the main transcript; parse them from there to find all subagent logs.
 
 ## Aggregate per-subagent metrics
 
-For each `agent-*.meta.json` + `agent-*.jsonl` pair in the subagents directory:
+For each discovered subagent transcript:
 
-- Read the meta file for `agentType` and `description`.
-- Use the meta file's mtime as the spawn timestamp (close approximation; the file is created when the subagent is spawned).
-- Read the LAST event in the corresponding `.jsonl` for finish time and final `usage` block.
-- The usage block contains `input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`, `output_tokens`. Sum them per-subagent for a "tokens used" approximation. Count tool_use events in the jsonl for `tool_uses`.
+- Determine the subagent's role / task from its invocation in the main transcript or the initial `USER_INPUT` prompt step in its own `transcript.jsonl`.
+- Use the first step's `created_at` timestamp as the spawn time.
+- Read the last step in the `transcript.jsonl` for completion time.
+- In `transcript.jsonl`, extract token usage metrics (or count steps and tool_calls) to approximate activity. Count `tool_calls` array items for `tool_uses`.
 
-Group subagents by phase using the `description` field:
-- "Execute task" / "Execute Task" → Task loop
+Group subagents by phase using their role or prompt:
+- "Task executor" → Task loop
 - "QA review", "Code quality review", "Test review", "Implementation review", "Documentation review" → Review phase 1 comprehensive
-- "Fixer for phase 1", "Fixer phase 1 findings" → Review phase 1 fixer
-- "QA critical re-check", "Implementation critical re-check" → Review phase 1 critical re-check
-- "Code smells review", "Smells analysis" → Review phase 2 smells
-- "Fixer - smells" → Smells fixer
-- "Fixer - external review", "Fixer - codex", "Codex fixer" → Review phase 3 external review fixer
-- "QA critical pass", "Implementation critical pass" → Review phase 4 critical-only
-- "Finalize" → Finalize
+- "Fixer", "Fixer for phase 1" → Review phase 1 fixer
+- "Smells reviewer" → Review phase 2 smells
+- "Fixer - external review", "Fixer - codex" → Review phase 3 external review fixer
+- "Finalizer" → Finalize
 
-A phase's parallel execution detection: if all agents within a phase have meta mtimes within ~10s of each other, mark "parallel". Otherwise "sequential" with the total spread.
+A phase's parallel execution detection: if agents within a phase were launched together in a single `invoke_subagent` tool call, mark "parallel". Otherwise "sequential".
 
 ## Read the progress file
 

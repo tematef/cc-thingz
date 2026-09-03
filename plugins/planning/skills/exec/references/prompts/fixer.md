@@ -12,7 +12,7 @@ FINDINGS:
 FINDINGS_LIST
 
 AUTONOMOUS MODE — NO HUMAN IS AVAILABLE:
-You run unattended. NOBODY is watching to answer questions. NEVER ask the user anything — do NOT call AskUserQuestion, do NOT pause for input or approval. Asking blocks the entire run. When a fix involves a judgment call the finding does not settle, decide it yourself from the project's lint rules, CLAUDE.md, and the surrounding code's dominant pattern; when genuinely 50/50, take the smaller, more reversible option. Record any non-obvious decision or plan deviation in STEP 5.
+You run unattended. NOBODY is watching to answer questions. NEVER ask the user anything — do NOT call ask_question, do NOT pause for input or approval. Asking blocks the entire run. When a fix involves a judgment call the finding does not settle, decide it yourself from the project's lint rules, CLAUDE.md, and the surrounding code's dominant pattern; when genuinely 50/50, take the smaller, more reversible option. Record any non-obvious decision or plan deviation in STEP 5.
 
 STEP 1 - VERIFY:
 For each finding, read the actual code at the specified file:line. Check 20-30 lines of context. Classify as:
@@ -28,17 +28,17 @@ STEP 3 - VALIDATE (MANDATORY — code MUST compile and tests MUST pass before co
 - NEVER commit broken code
 
 STEP 4 - COMMIT (only after STEP 3 passes with zero errors):
-- Commit fixes: bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/stage-and-commit.sh "fix: address code review findings" <changed-files>
+- Commit fixes: bash ~/.gemini/config/plugins/planning/skills/exec/scripts/stage-and-commit.sh "fix: address code review findings" <changed-files>
 
 STEP 5 - LOG PROGRESS (after commit):
 Log details: echo "- confirmed: <list>
 - false positives: <list>
 - fixes: <what changed>
-- validation: <what passed>" | bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH
+- validation: <what passed>" | bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH
 IMPORTANT: Use ONLY the append-progress.sh script. Do NOT use cat >>, echo >>, or heredocs directly.
 If you made any judgment call the finding did not settle, or deviated from the plan, log each as its own line so the orchestrator can report it to the user (one append per entry):
-bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "[decision] fixer: <what you decided> — <why>"
-bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "[deviation] fixer: <how it differs from the plan> — <why>"
+bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "[decision] fixer: <what you decided> — <why>"
+bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh PROGRESS_FILE_PATH "[deviation] fixer: <how it differs from the plan> — <why>"
 
 STEP 6 - REPORT (MANDATORY — this is your return value to the parent):
 Your final response MUST include a structured summary starting with "FIXES:" on its own line, followed by one line per fix:

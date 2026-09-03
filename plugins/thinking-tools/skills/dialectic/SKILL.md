@@ -2,7 +2,7 @@
 name: dialectic
 description: Prove and counter-prove a statement using parallel agents to eliminate confirmation bias. Use when someone says "dialectic", "prove/disprove", "stress test this claim", "is this really true", "argue both sides", or when a statement needs objective analysis from opposing viewpoints.
 argument-hint: '<statement to analyze>'
-allowed-tools: Bash, Read, Grep, Glob, Task, AskUserQuestion
+allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Dialectic Analysis
@@ -13,7 +13,7 @@ Objective analysis of a statement by running two agents with opposing goals in p
 
 ### Step 1: Launch Parallel Agents
 
-**CRITICAL: Both Task tool calls MUST be in a single message for true parallel execution.** Do NOT use run_in_background. Do NOT launch sequentially. Foreground agents in the same message run in parallel and block until both complete.
+**CRITICAL: Both invoke_subagent calls MUST be in a single Subagents array for true parallel execution.** Do NOT use run_in_background. Do NOT launch sequentially. Foreground agents in the same message run in parallel and block until both complete.
 
 **Agent 1 (Thesis)** — find all POSITIVE evidence:
 - what works well, improvements, correct patterns
