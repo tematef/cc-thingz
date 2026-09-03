@@ -22,3 +22,9 @@ When contributing to this repository, you must adhere to the following rules:
    Any lifecycle hook scripts (Python or Bash) must be written for the AGY ecosystem:
    - Read the payload from `stdin` as a JSON object (uses `camelCase` keys like `conversationId`, `stepIdx`, `artifactDirectoryPath`).
    - Output a strictly formatted JSON object to `stdout` (e.g., `{"decision": "continue", "reason": "..."}` for `Stop` hooks, or `{"injectSteps": [...]}` for `PreInvocation` hooks).
+
+4. **Detailed Tool & Plugin Context:**
+   For a comprehensive architectural breakdown of the tool suite, available plugins, and workflow capabilities, see [.agents/CONTEXT.md](file:///Users/artem/projects/cc-thingz/.agents/CONTEXT.md).
+
+5. **Upstream Synchronization:**
+   To synchronize this fork with upstream updates from `umputun/cc-thingz`, use the `cc-thingz-sync` skill (`plugins/workflow/skills/sync/SKILL.md`). Always ensure our AGY/Jetski adaptations are preserved during rebase conflicts.
