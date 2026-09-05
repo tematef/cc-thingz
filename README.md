@@ -252,10 +252,11 @@ Review agents are read-only reporters. The fixer agent evaluates each finding, f
 
 **VCS support** — the exec helper scripts are VCS-aware and work in both git and Mercurial (hg) repositories. The finalize and external-review phases remain git-only, but their behaviour can be customised for hg via `.claude/exec-plan/prompts/finalizer.md` and `.claude/exec-plan/prompts/codex-review.md` overrides.
 
-**Customization** — prompts and agent definitions use a three-layer override chain (checked in order, first match wins):
-1. Project: `.claude/exec-plan/prompts/` and `.claude/exec-plan/agents/`
-2. User: `${CLAUDE_PLUGIN_DATA}/prompts/` and `${CLAUDE_PLUGIN_DATA}/agents/`
-3. Bundled defaults (shipped with the plugin)
+**Customization** — prompts and agent definitions use an override chain (checked in order, first match wins):
+1. Project (AGY/Jetski): `.agents/exec-plan/prompts/` and `.agents/exec-plan/agents/`
+2. Project (Claude Code): `.claude/exec-plan/prompts/` and `.claude/exec-plan/agents/`
+3. User: `${CLAUDE_PLUGIN_DATA}/prompts/` and `${CLAUDE_PLUGIN_DATA}/agents/`
+4. Bundled defaults (shipped with the plugin)
 
 To customize, place your modified version in the override path. For example, to customize `prompts/review.md` at the project level:
 ```

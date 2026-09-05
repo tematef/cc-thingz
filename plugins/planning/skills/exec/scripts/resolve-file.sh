@@ -1,5 +1,5 @@
 #!/bin/bash
-# resolve a file through the three-layer override chain
+# resolve a file through the four-layer override chain
 # usage: resolve-file.sh <relative-path> [data-dir]
 # e.g.: resolve-file.sh prompts/task.md /path/to/plugin/data
 # e.g.: resolve-file.sh agents/quality.txt /path/to/plugin/data
@@ -9,9 +9,10 @@
 # falls back to $CLAUDE_PLUGIN_DATA env var if not provided as argument.
 #
 # checks in order:
-#   1. .claude/exec-plan/<path> (project override)
-#   2. <data-dir>/<path> (user override)
-#   3. bundled default (derived from script location)
+#   1. .agents/exec-plan/<path> (project override - AGY/Jetski)
+#   2. .claude/exec-plan/<path> (project override - Claude Code)
+#   3. <data-dir>/<path> (user override)
+#   4. bundled default (derived from script location)
 #
 # outputs the file content to stdout
 

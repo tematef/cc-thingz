@@ -57,10 +57,11 @@ Set via `userConfig` in plugin.json (prompted at install):
 | `plans_dir` | `docs/plans` | directory for plan files |
 
 ### Customization
-Prompts and agent definitions use a three-layer override chain:
-1. Project: `.claude/exec-plan/prompts/` and `.claude/exec-plan/agents/`
-2. User: `$CLAUDE_PLUGIN_DATA/prompts/` and `$CLAUDE_PLUGIN_DATA/agents/`
-3. Bundled defaults
+Prompts and agent definitions use a four-layer override chain:
+1. Project (AGY/Jetski): `.agents/exec-plan/prompts/` and `.agents/exec-plan/agents/`
+2. Project (Claude Code): `.claude/exec-plan/prompts/` and `.claude/exec-plan/agents/`
+3. User: `$CLAUDE_PLUGIN_DATA/prompts/` and `$CLAUDE_PLUGIN_DATA/agents/` (or `~/.gemini/config/plugins_data/cc-thingz/`)
+4. Bundled defaults
 
 Nothing is copied anywhere automatically. Installs before planning 3.10.0 did seed `$CLAUDE_PLUGIN_DATA` with
 copies of every bundled prompt and agent — those copies still shadow the bundled defaults and no longer track
