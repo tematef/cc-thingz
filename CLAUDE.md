@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+> **Note for Google Antigravity (AGY) & Jetski agents:**
+> This repository is adapted for AGY and Jetski. Please refer to [GEMINI.md](file:///Users/artem/projects/cc-thingz/GEMINI.md), [AGENTS.md](file:///Users/artem/projects/cc-thingz/AGENTS.md), and [.agents/CONTEXT.md](file:///Users/artem/projects/cc-thingz/.agents/CONTEXT.md) for authoritative rules and architecture context.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Repository Purpose

@@ -20,7 +20,7 @@ Interactive annotation-based code review using editor overlays.
 2. Opens in `$EDITOR` via agterm overlay, tmux popup, kitty overlay, or wezterm split-pane
 3. User adds annotations (comments, change requests) directly in the file
 4. Script returns user's annotations as a git diff
-5. Claude reads annotations, fixes code in the real repo
+5. Agent reads annotations, fixes code in the real repo
 6. Script regenerates fresh diff (reflecting fixes), opens again
 7. Loop until user closes editor without changes
 
@@ -91,7 +91,7 @@ User: "review my changes"
 → stdout shows the annotation
 → enter plan mode: "annotation requests input validation in handler.go, plan: add validate() call"
 → user approves plan
-→ Claude adds input validation to the handler
+→ Agent adds input validation to the handler
 → run: git-review.py (again)
 → editor opens with updated diff (validation now visible)
 → user closes without changes

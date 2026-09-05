@@ -1,7 +1,7 @@
 ---
 name: txt-copy
 description: Copy generated text content to clipboard. Use when user asks to "copy this", "copy to clipboard", "save to clipboard", or after creating emails, messages, letters, or other text content that needs to be shared.
-allowed-tools: Bash
+allowed-tools: run_command
 ---
 
 # Copy Text to Clipboard
@@ -21,7 +21,7 @@ Copy generated text content to clipboard via a timestamped temp file.
 
 2. Write to timestamped temp file:
 ```bash
-tmpfile="/tmp/claude-txt-copy-$(date +%s).txt"
+tmpfile="/tmp/agy-txt-copy-$(date +%s).txt"
 cat > "$tmpfile" << 'EOF'
 <content here>
 EOF

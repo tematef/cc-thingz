@@ -22,15 +22,15 @@ if the output is non-empty, treat it as additional instructions that supplement 
 
 when the user asks to add, show, or clear custom brainstorm rules, handle these operations:
 
-- **show rules**: run `bash ~/.gemini/config/plugins/brainstorm/scripts/resolve-rules.sh brainstorm-rules.md ~/.gemini/config/plugins_data/cc-thingz` and display the output. if the output is empty, tell the user no custom rules are configured at either level. otherwise, to determine the source, check if `.claude/brainstorm-rules.md` exists and is non-empty (project-level) — if not, the output came from user-level. tell the user which level it came from.
-- **add/update project rules**: write content to `.claude/brainstorm-rules.md` in the current working directory.
+- **show rules**: run `bash ~/.gemini/config/plugins/brainstorm/scripts/resolve-rules.sh brainstorm-rules.md ~/.gemini/config/plugins_data/cc-thingz` and display the output. if the output is empty, tell the user no custom rules are configured at either level. otherwise, to determine the source, check if `.agents/brainstorm-rules.md` or `.claude/brainstorm-rules.md` exists and is non-empty (project-level) — if not, the output came from user-level. tell the user which level it came from.
+- **add/update project rules**: write content to `.agents/brainstorm-rules.md` (or `.claude/brainstorm-rules.md`) in the current working directory.
 - **add/update user rules**: check if directory `~/.gemini/config/plugins_data/cc-thingz` exists (`[ -d ~/.gemini/config/plugins_data/cc-thingz ]`). if not present, offer project-level instead. if present, write content to `~/.gemini/config/plugins_data/cc-thingz/brainstorm-rules.md`.
-- **clear project rules**: delete `.claude/brainstorm-rules.md`.
+- **clear project rules**: delete `.agents/brainstorm-rules.md` and `.claude/brainstorm-rules.md` if present.
 - **clear user rules**: delete `~/.gemini/config/plugins_data/cc-thingz/brainstorm-rules.md` if present.
 
-project-level rules (`.claude/brainstorm-rules.md`) take precedence over user-level rules (`~/.gemini/config/plugins_data/cc-thingz/brainstorm-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `~/.gemini/config/plugins/brainstorm/references/custom-rules.md` for full documentation on the rules mechanism.
+project-level rules (`.agents/brainstorm-rules.md` / `.claude/brainstorm-rules.md`) take precedence over user-level rules (`~/.gemini/config/plugins_data/cc-thingz/brainstorm-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `~/.gemini/config/plugins/brainstorm/references/custom-rules.md` for full documentation on the rules mechanism.
 
-**CRITICAL: this skill must NEVER modify its own files (skills, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.claude/brainstorm-rules.md` and `~/.gemini/config/plugins_data/cc-thingz/brainstorm-rules.md`. if the user asks to change the skill's behavior, suggest creating a plan — do not edit skill files directly.**
+**CRITICAL: this skill must NEVER modify its own files (skills, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.agents/brainstorm-rules.md` (or `.claude/brainstorm-rules.md`) and `~/.gemini/config/plugins_data/cc-thingz/brainstorm-rules.md`. if the user asks to change the skill's behavior, suggest creating a plan — do not edit skill files directly.**
 
 ## Process
 

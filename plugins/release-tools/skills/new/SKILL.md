@@ -102,7 +102,7 @@ Script logic:
 4. Groups into: New Features, Improvements, Bug Fixes, Other
 5. Strips prefix from description for cleaner output
 
-**Post-processing (Claude must do this before presenting):**
+**Post-processing (Agent must do this before presenting):**
 - Deduplicate entries with same description (PRs and their commits often duplicate)
 - Prefer PR entries over commit entries when duplicated (PR has #number and @author)
 - Compare descriptions after stripping conventional prefix
