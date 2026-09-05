@@ -1,5 +1,5 @@
 #!/bin/bash
-# resolve custom rules file through the two-layer override chain
+# resolve custom rules file through the three-layer override chain
 # usage: resolve-rules.sh <filename> [data-dir]
 # e.g.: resolve-rules.sh brainstorm-rules.md /path/to/plugin/data
 #
@@ -8,8 +8,9 @@
 # falls back to $CLAUDE_PLUGIN_DATA env var if not provided as argument.
 #
 # checks in order (first-found-wins, not merged):
-#   1. .claude/<filename> (project override)
-#   2. <data-dir>/<filename> (user override)
+#   1. .agents/<filename> (project override - AGY/Jetski)
+#   2. .claude/<filename> (project override - Claude Code)
+#   3. <data-dir>/<filename> (user override)
 #
 # outputs file content to stdout if found, empty output if not
 # always exits 0
