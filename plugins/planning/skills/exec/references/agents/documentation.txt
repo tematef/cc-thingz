@@ -19,9 +19,9 @@ Skip:
 - Test additions
 - Code style changes
 
-## CLAUDE.md (AI Knowledge Base)
+## GEMINI.md / AGENTS.md (AI Knowledge Base)
 
-Check if changes require CLAUDE.md updates:
+Check if changes require GEMINI.md, AGENTS.md (or CLAUDE.md) updates:
 
 Must document:
 - New architectural patterns discovered/established

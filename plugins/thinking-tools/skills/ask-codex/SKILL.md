@@ -35,16 +35,16 @@ Gather context from the current conversation:
 3. **What we tried** — approaches attempted and why they failed (if applicable)
 4. **Specific question** — what exactly codex should analyze or answer
 
-Codex does NOT auto-load Claude Code's memory files — it only reads `AGENTS.md`. To give Codex the same project context Claude follows, prepend the memory-load preamble described in Step 3.
+Codex auto-loads `AGENTS.md` in the working directory, but may not read `GEMINI.md`, `.agents/AGENTS.md`, or global Antigravity config files. To give Codex full project context, prepend the memory-load preamble described in Step 3.
 
 ### Step 3: Construct Prompt
 
 Build a focused prompt. Do NOT dump entire files — codex has full project access and can read them itself. Provide file paths and line references so codex knows where to look.
 
-**Prepend a memory-load preamble.** Codex auto-loads only `AGENTS.md`; it does NOT read Claude Code's memory files (`CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules/`, `~/.gemini/config/CLAUDE.md`), so the project conventions Claude follows are invisible to Codex unless you tell it to read them. Prepend this line to the prompt:
+**Prepend a memory-load preamble.** Prepend this line to the prompt:
 
 ```
-First read these project guidance files if present: <ABS_HOME>/.gemini/config/CLAUDE.md, CLAUDE.md, CLAUDE.local.md, .agents/AGENTS.md
+First read these project guidance files if present: <ABS_HOME>/.gemini/config/GEMINI.md, <ABS_HOME>/.gemini/config/AGENTS.md, GEMINI.md, AGENTS.md, .agents/AGENTS.md, CLAUDE.md
 ```
 
 - Resolve `<ABS_HOME>` to the **absolute** home path (run `echo $HOME`, e.g. `/home/<user>`) and write the literal path — do NOT leave the string `$HOME` in the prompt. Whether `$HOME` expands depends on how the prompt is passed to Codex, and Codex may open the file with a non-shell tool that never expands it, so only a literal absolute path is reliable.

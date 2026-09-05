@@ -6,24 +6,24 @@ Custom rules let you inject project-specific or personal conventions into the pl
 
 Two levels, checked in order (first-found-wins, never merged):
 
-1. **Project-level**: `.claude/planning-rules.md` in the current working directory
-2. **User-level**: `$CLAUDE_PLUGIN_DATA/planning-rules.md` (per-plugin persistent storage)
+1. **Project-level**: `.agents/planning-rules.md` (or `.claude/planning-rules.md`) in the current working directory
+2. **User-level**: `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md` (per-plugin persistent storage)
 
 When both non-empty files exist, only the project-level file is used. Empty files are treated as absent and fall through to the next level.
 
 ## Resolution
 
-Each skill runs `resolve-rules.sh planning-rules.md <data-dir>` via Bash at startup, where `<data-dir>` is the plugin data directory path passed from the skill content (text-substituted from `~/.gemini/config/plugins_data/cc-thingz`). The script falls back to the `$CLAUDE_PLUGIN_DATA` env var if no argument is provided. Outputs the first file found (project, then user) or empty output if neither exists.
+Each skill runs `resolve-rules.sh planning-rules.md <data-dir>` via run_command at startup, where `<data-dir>` is the plugin data directory path passed from the skill content (text-substituted from `~/.gemini/config/plugins_data/cc-thingz`). Outputs the first file found (project, then user) or empty output if neither exists.
 
 ## Managing Rules
 
 Ask the make command to manage rules:
 
 - **show rules** — displays current rules and which level they came from
-- **add/update project rules** — writes to `.claude/planning-rules.md`
-- **add/update user rules** — writes to `$CLAUDE_PLUGIN_DATA/planning-rules.md`
-- **clear project rules** — deletes `.claude/planning-rules.md`
-- **clear user rules** — deletes `$CLAUDE_PLUGIN_DATA/planning-rules.md`
+- **add/update project rules** — writes to `.agents/planning-rules.md` (or `.claude/planning-rules.md`)
+- **add/update user rules** — writes to `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`
+- **clear project rules** — deletes `.agents/planning-rules.md` and `.claude/planning-rules.md`
+- **clear user rules** — deletes `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`
 
 ## Example Content
 

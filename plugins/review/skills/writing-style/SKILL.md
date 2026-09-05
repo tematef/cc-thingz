@@ -9,7 +9,7 @@ description: Use for technical communication - GitHub/GitLab tickets, PR/MR desc
 
 Before applying this guide, check if the user already has their own writing-style rules:
 
-1. Check CLAUDE.md files (project-level and user-level) for writing style sections (look for "writing style", "communication style", "tone", "comment style" headings or similar)
+1. Check GEMINI.md, AGENTS.md, or CLAUDE.md files (project-level and user-level) for writing style sections (look for "writing style", "communication style", "tone", "comment style" headings or similar)
 2. Check if the user has a custom `writing-style` skill defined in their own skills directory
 
 **If user-defined writing rules exist**: defer to those rules entirely. Do not apply this guide. Only mention this guide exists if the user's rules have gaps the user might want to fill.

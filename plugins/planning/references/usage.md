@@ -78,7 +78,7 @@ literally, and only the README carries that form. That paragraph is authoritativ
 
 ### Subagent constraint
 
-Subagents in current Claude Code do not have the Agent tool — they cannot spawn other subagents. `prompts/review.md` is therefore read by the main session orchestrator (as a playbook), not given to a subagent. The 5-specialist fanout runs directly from the main session. Leaf-work prompts (`task.md`, `fixer.md`, `finalizer.md`, `codex-review.md`, `agents/smells.txt`) can be subagent prompts because they don't need to spawn further. Any custom override needing parallel fanout must follow the same playbook pattern.
+Subagents in current Antigravity do not have the invoke_subagent tool — they cannot spawn other subagents. `prompts/review.md` is therefore read by the main session orchestrator (as a playbook), not given to a subagent. The 5-specialist fanout runs directly from the main session. Leaf-work prompts (`task.md`, `fixer.md`, `finalizer.md`, `codex-review.md`, `agents/smells.txt`) can be subagent prompts because they don't need to spawn further. Any custom override needing parallel fanout must follow the same playbook pattern.
 
 ## Plan-Review — agent
 
@@ -91,7 +91,7 @@ Subagents in current Claude Code do not have the Agent tool — they cannot spaw
 - scope creep and over-engineering
 - testing requirements and coverage
 - task granularity and ordering
-- convention adherence (via CLAUDE.md and custom rules)
+- convention adherence (via GEMINI.md / AGENTS.md and custom rules)
 
 ### Output
 Structured report with severity-rated findings:

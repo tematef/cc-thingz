@@ -31,7 +31,9 @@ data_dir="${2:-$CLAUDE_PLUGIN_DATA}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_ROOT="$(dirname "$SCRIPT_DIR")"
 
-if [ -f ".claude/exec-plan/$path" ]; then
+if [ -f ".agents/exec-plan/$path" ]; then
+    cat ".agents/exec-plan/$path"
+elif [ -f ".claude/exec-plan/$path" ]; then
     cat ".claude/exec-plan/$path"
 elif [ -n "$data_dir" ] && [ -f "$data_dir/$path" ]; then
     cat "$data_dir/$path"

@@ -22,7 +22,9 @@ fi
 # use argument if provided, fall back to env var
 data_dir="${2:-$CLAUDE_PLUGIN_DATA}"
 
-if [ -f ".claude/$filename" ] && [ -s ".claude/$filename" ]; then
+if [ -f ".agents/$filename" ] && [ -s ".agents/$filename" ]; then
+    cat ".agents/$filename"
+elif [ -f ".claude/$filename" ] && [ -s ".claude/$filename" ]; then
     cat ".claude/$filename"
 elif [ -n "$data_dir" ] && [ -f "$data_dir/$filename" ] && [ -s "$data_dir/$filename" ]; then
     cat "$data_dir/$filename"

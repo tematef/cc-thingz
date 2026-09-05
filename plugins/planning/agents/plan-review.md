@@ -50,7 +50,7 @@ Key rules from the plan template:
 
 ### Step 2: Load Project Context
 
-1. Read project's `CLAUDE.md` for conventions and patterns
+1. Read project's `GEMINI.md`, `AGENTS.md`, or `CLAUDE.md` for conventions and patterns
 2. Check for existing code patterns the plan should follow
 3. Understand the codebase structure relevant to the plan
 
@@ -91,7 +91,7 @@ Per plan template rules:
 
 #### Maintainability (Important)
 - Solution will produce readable, maintainable code
-- Follows project conventions from CLAUDE.md
+- Follows project conventions from GEMINI.md / AGENTS.md (or CLAUDE.md)
 - No clever solutions where clear would work
 - Appropriate decomposition
 
@@ -102,7 +102,7 @@ Per plan template rules:
 - Clear progression from task to task
 
 #### Convention Adherence (Important)
-- Follows naming conventions from CLAUDE.md
+- Follows naming conventions from GEMINI.md / AGENTS.md (or CLAUDE.md)
 - Matches existing code patterns in the project
 - Uses project's preferred libraries/approaches
 - Comment style matches project rules

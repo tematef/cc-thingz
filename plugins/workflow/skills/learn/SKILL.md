@@ -1,12 +1,12 @@
 ---
 name: learn
-description: Update project CLAUDE.md with strategic knowledge discovered during this session — or CLAUDE.local.md when the discovery is per-developer/per-checkout and that file already exists. Defers to any project- or user-defined memory-placement guidance instead of overriding it. Use when user says "learn", "save knowledge", "update claude.md", "capture learnings", or at end of significant work sessions. Also used by commit skill for pre-commit knowledge capture.
+description: Update project GEMINI.md or AGENTS.md with strategic knowledge discovered during this session — or local override when the discovery is per-developer/per-checkout. Defers to any project- or user-defined memory-placement guidance instead of overriding it. Use when user says "learn", "save knowledge", "update gemini.md", "update agents.md", "update claude.md", "capture learnings", or at end of significant work sessions. Also used by commit skill for pre-commit knowledge capture.
 allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Learn
 
-Review the current conversation history and identify strategic, reusable project knowledge that should be captured in the project CLAUDE.md file. When the project has opted into Claude Code's three-tier memory convention by creating `CLAUDE.local.md`, route genuinely personal or environment-specific discoveries there instead.
+Review the current conversation history and identify strategic, reusable project knowledge that should be captured in the project's `GEMINI.md` or `AGENTS.md` (or `CLAUDE.md` if existing) file. When the project has opted into local or machine-specific rules (e.g. `GEMINI.local.md` or `.agents/rules/local.md`), route genuinely personal or environment-specific discoveries there instead.
 
 ## Analysis Process
 
@@ -33,18 +33,18 @@ Review the current conversation history and identify strategic, reusable project
 
 ## Destinations
 
-This skill writes to one of two files in the project root:
+This skill writes to one of the project instruction files in the project root:
 
-- **`CLAUDE.md`** (project memory, committed, team-shared) — the default destination. Use for architecture, conventions, integration patterns, and any other knowledge useful to the whole team.
-- **`CLAUDE.local.md`** (local memory, gitignored personal overrides) — used only when **both** conditions hold:
-  1. `CLAUDE.local.md` already exists in the project (the project has opted into the three-tier memory convention).
+- **`GEMINI.md` / `AGENTS.md`** (or `CLAUDE.md` if the project uses it) (project memory, committed, team-shared) — the default destination. Detect which file the project already uses: if `GEMINI.md` exists, use it; if `AGENTS.md` exists (or `.agents/AGENTS.md`), use it; if only `CLAUDE.md` exists, use it; if none exist, default to `GEMINI.md`. Use for architecture, conventions, integration patterns, and any other knowledge useful to the whole team.
+- **Local overrides** (`GEMINI.local.md` / `AGENTS.local.md` / `CLAUDE.local.md` or `.agents/rules/local.md`) — used only when **both** conditions hold:
+  1. The local override file already exists in the project.
   2. The discovery describes per-developer / per-checkout state — not just *mentions* something personal, but the knowledge itself is meaningful only to the current developer on this machine. Examples: a tool-loading workaround that depends on this developer's interpreter / runtime setup, a personal alias, a per-checkout env override.
 
-  **Counter-example:** *"We keep credentials in `~/.aws/credentials`"* mentions a user-home path but describes a team-wide convention — the path is illustrative, not per-developer state. Such notes belong in project CLAUDE.md. When in doubt about whether a discovery is genuinely personal, default to project CLAUDE.md.
+  **Counter-example:** *"We keep credentials in `~/.aws/credentials`"* mentions a user-home path but describes a team-wide convention — the path is illustrative, not per-developer state. Such notes belong in project `GEMINI.md` / `AGENTS.md`. When in doubt about whether a discovery is genuinely personal, default to project `GEMINI.md` / `AGENTS.md`.
 
-This skill never writes to the user's global `~/.gemini/config/CLAUDE.md` (user memory) — only reads it to avoid duplicating cross-project knowledge.
+This skill never writes to the user's global `~/.gemini/config/GEMINI.md` or `~/.gemini/config/AGENTS.md` (user memory) — only reads it to avoid duplicating cross-project knowledge.
 
-**Default for ambiguous cases: project CLAUDE.md.** Leaking personal config into a committed file is a loud error that reviewers catch quickly; hiding project-wide knowledge in a gitignored personal file is a silent error that rots over time.
+**Default for ambiguous cases: project GEMINI.md / AGENTS.md.** Leaking personal config into a committed file is a loud error that reviewers catch quickly; hiding project-wide knowledge in a gitignored personal file is a silent error that rots over time.
 
 ## What Qualifies
 
@@ -86,10 +86,10 @@ Ask yourself for each discovery:
 ## Workflow
 
 ### 1. Check for Existing Memory-Placement Guidance
-Before applying the routing rules below, scan the project's root `CLAUDE.md`, any `.claude/rules/*.md` files, the user's global `~/.gemini/config/CLAUDE.md`, and any `~/.gemini/config/rules/*.md` files for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `CLAUDE.md` / `CLAUDE.local.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
+Before applying the routing rules below, scan the project's root `GEMINI.md`, `AGENTS.md`, `CLAUDE.md`, any `.agents/rules/*.md` files, and the user's global `~/.gemini/config/` rules for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `GEMINI.md` / `AGENTS.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
 
 ### 2. Check Existing Memory Content
-Read the current content of project `CLAUDE.md`, `CLAUDE.local.md` (if present), and the user's global `~/.gemini/config/CLAUDE.md` to avoid duplication — including cross-project entries already captured in user memory.
+Read the current content of project `GEMINI.md`, `AGENTS.md`, `CLAUDE.md` (if present), local overrides (if present), and global `~/.gemini/config/` rules to avoid duplication — including cross-project entries already captured in user memory.
 
 ### 3. Early Exit if Nothing Found
 If no new strategic knowledge was discovered during this session:
@@ -98,12 +98,12 @@ If no new strategic knowledge was discovered during this session:
 - End the skill execution
 
 ### 4. Classify Each Discovery
-For each discovery, determine its destination per the [Destinations](#destinations) rules: default to project CLAUDE.md, and route to `CLAUDE.local.md` only when both file-exists and personal-content criteria are met (and the counter-example caveat doesn't apply).
+For each discovery, determine its destination per the [Destinations](#destinations) rules: default to project `GEMINI.md` or `AGENTS.md`, and route to local overrides only when both file-exists and personal-content criteria are met.
 
 ### 5. New Knowledge to Add
 Present discovered knowledge formatted for the chosen destination, tagging each block with its inferred file:
 ```markdown
-## [Section Name] → project CLAUDE.md
+## [Section Name] → project GEMINI.md (or AGENTS.md)
 - Discovery 1
 - Discovery 2
 ```
@@ -123,8 +123,8 @@ Example with 3 discoveries (2 project, 1 personal):
 question: "Which knowledge should I save?"
 options:
   - "(Recommended) All (3 items) - Save all discovered patterns to their inferred destinations"
-  - "Service discovery pattern → project CLAUDE.md - Project-wide convention for how modules find each other"
-  - "Local toolchain variant → CLAUDE.local.md - Per-checkout build runner override (only relevant on this machine)"
+  - "Service discovery pattern → project GEMINI.md - Project-wide convention for how modules find each other"
+  - "Local toolchain variant → GEMINI.local.md - Per-checkout build runner override (only relevant on this machine)"
   - "None - Skip saving, nothing worth keeping"
 ```
 
@@ -132,7 +132,7 @@ Example with 1 discovery:
 ```yaml
 question: "Save this knowledge?"
 options:
-  - "(Recommended) Yes → project CLAUDE.md - Save: [brief description of the discovery]"
+  - "(Recommended) Yes → project GEMINI.md - Save: [brief description of the discovery]"
   - "No - Skip saving"
 ```
 
@@ -144,7 +144,7 @@ After user selection:
 
 ## Important Guidelines
 - Only capture genuinely new discoveries from this session
-- Don't duplicate existing project CLAUDE.md, `CLAUDE.local.md`, or user CLAUDE.md content
+- Don't duplicate existing project `GEMINI.md`, `AGENTS.md`, `CLAUDE.md`, or user config content
 - Focus on patterns observed, not specific code written
 - Keep descriptions concise and actionable
 - MUST use ask_question tool for confirmation (not plain text questions)

@@ -22,15 +22,15 @@ if the output is non-empty, treat it as additional instructions that supplement 
 
 when the user asks to add, show, or clear custom planning rules, handle these operations:
 
-- **show rules**: run `bash ~/.gemini/config/plugins/planning/scripts/resolve-rules.sh planning-rules.md ~/.gemini/config/plugins_data/cc-thingz` and display the output. if the output is empty, tell the user no custom rules are configured at either level. otherwise, to determine the source, check if `.claude/planning-rules.md` exists and is non-empty (project-level) — if not, the output came from user-level. tell the user which level it came from.
-- **add/update project rules**: write content to `.claude/planning-rules.md` in the current working directory.
+- **show rules**: run `bash ~/.gemini/config/plugins/planning/scripts/resolve-rules.sh planning-rules.md ~/.gemini/config/plugins_data/cc-thingz` and display the output. if the output is empty, tell the user no custom rules are configured at either level. otherwise, to determine the source, check if `.agents/planning-rules.md` or `.claude/planning-rules.md` exists and is non-empty (project-level) — if not, the output came from user-level. tell the user which level it came from.
+- **add/update project rules**: write content to `.agents/planning-rules.md` (or `.claude/planning-rules.md`) in the current working directory.
 - **add/update user rules**: check if directory `~/.gemini/config/plugins_data/cc-thingz` exists (`[ -d ~/.gemini/config/plugins_data/cc-thingz ]`). if not present, offer project-level instead. if present, write content to `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`.
-- **clear project rules**: delete `.claude/planning-rules.md`.
+- **clear project rules**: delete `.agents/planning-rules.md` and `.claude/planning-rules.md` if present.
 - **clear user rules**: delete `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md` if present.
 
-project-level rules (`.claude/planning-rules.md`) take precedence over user-level rules (`~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `~/.gemini/config/plugins/planning/references/custom-rules.md` for full documentation on the rules mechanism.
+project-level rules (`.agents/planning-rules.md` / `.claude/planning-rules.md`) take precedence over user-level rules (`~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `~/.gemini/config/plugins/planning/references/custom-rules.md` for full documentation on the rules mechanism.
 
-**CRITICAL: this skill must NEVER modify its own files (commands, skills, agents, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.claude/planning-rules.md` and `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`. if the user asks to change the skill's behavior, create a plan for it — do not edit skill files directly.**
+**CRITICAL: this skill must NEVER modify its own files (commands, skills, agents, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.agents/planning-rules.md` (or `.claude/planning-rules.md`) and `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`. if the user asks to change the skill's behavior, create a plan for it — do not edit skill files directly.**
 
 ## step 0: parse intent and gather context
 
@@ -43,12 +43,12 @@ before asking questions, understand what the user is working on:
    - "migrate to Z" / "upgrade W" → migration plan
    - generic request → explore current work
 
-2. **gather relevant context quickly** — use direct tool calls (Read, Glob, Grep), NOT an Explore agent. keep discovery under 30 seconds:
+2. **gather relevant context quickly** — use direct tool calls (view_file, find_by_name, grep_search), NOT an Explore agent. keep discovery under 30 seconds:
 
    **for feature development:**
-   - glob for files matching the feature area (e.g., `**/*auth*`, `**/*cache*`)
+   - find files matching the feature area (e.g., `**/*auth*`, `**/*cache*`)
    - read 1-3 most relevant files to understand existing patterns
-   - check project structure with a quick `ls` of key directories
+   - check project structure with a quick scan of key directories
 
    **for bug fixing:**
    - grep for error messages or function names mentioned in the request
@@ -56,14 +56,14 @@ before asking questions, understand what the user is working on:
    - check `git log --oneline -5` for recent changes
 
    **for refactoring/migration:**
-   - glob for files matching the area being refactored
+   - find files matching the area being refactored
    - read 2-3 key files to understand current structure
    - grep for imports/references to identify dependencies
 
    **for generic/unclear requests:**
    - check `git status` and `git log --oneline -5`
-   - read README.md or CLAUDE.md for project overview
-   - `ls` the top-level directory structure
+   - read README.md, GEMINI.md, or AGENTS.md for project overview
+   - list the top-level directory structure
 
    **CRITICAL: do NOT launch an Explore agent or read more than 5 files in this step. the goal is a quick scan, not exhaustive analysis. if more context is needed, ask the user in step 1.**
 
@@ -266,7 +266,7 @@ Example (NOTICE: Files block + tests as separate checklist items):
 
 ### Task N: [Final] Update documentation
 - [ ] update README.md if needed
-- [ ] update CLAUDE.md if new patterns discovered
+- [ ] update GEMINI.md / AGENTS.md (or CLAUDE.md) if new patterns discovered
 - [ ] move this plan to `docs/plans/completed/`
 
 ## Post-Completion
