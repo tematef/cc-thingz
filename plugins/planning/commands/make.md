@@ -22,15 +22,15 @@ if the output is non-empty, treat it as additional instructions that supplement 
 
 when the user asks to add, show, or clear custom planning rules, handle these operations:
 
-- **show rules**: run `bash ~/.gemini/config/plugins/planning/scripts/resolve-rules.sh planning-rules.md ~/.gemini/config/plugins_data/cc-thingz` and display the output. if the output is empty, tell the user no custom rules are configured at either level. otherwise, to determine the source, check if `.agents/planning-rules.md` or `.claude/planning-rules.md` exists and is non-empty (project-level) — if not, the output came from user-level. tell the user which level it came from.
-- **add/update project rules**: write content to `.agents/planning-rules.md` (or `.claude/planning-rules.md`) in the current working directory.
+- **show rules**: run `bash ~/.gemini/config/plugins/planning/scripts/resolve-rules.sh planning-rules.md ~/.gemini/config/plugins_data/cc-thingz` and display the output. if the output is empty, tell the user no custom rules are configured at either level. otherwise, to determine the source, check if `.agents/planning-rules.md` exists and is non-empty (project-level) — if not, the output came from user-level. tell the user which level it came from.
+- **add/update project rules**: write content to `.agents/planning-rules.md` in the current working directory.
 - **add/update user rules**: check if directory `~/.gemini/config/plugins_data/cc-thingz` exists (`[ -d ~/.gemini/config/plugins_data/cc-thingz ]`). if not present, offer project-level instead. if present, write content to `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`.
-- **clear project rules**: delete `.agents/planning-rules.md` and `.claude/planning-rules.md` if present.
+- **clear project rules**: delete `.agents/planning-rules.md` if present.
 - **clear user rules**: delete `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md` if present.
 
-project-level rules (`.agents/planning-rules.md` / `.claude/planning-rules.md`) take precedence over user-level rules (`~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `~/.gemini/config/plugins/planning/references/custom-rules.md` for full documentation on the rules mechanism.
+project-level rules (`.agents/planning-rules.md`) take precedence over user-level rules (`~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `~/.gemini/config/plugins/planning/references/custom-rules.md` for full documentation on the rules mechanism.
 
-**CRITICAL: this skill must NEVER modify its own files (commands, skills, agents, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.agents/planning-rules.md` (or `.claude/planning-rules.md`) and `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`. if the user asks to change the skill's behavior, create a plan for it — do not edit skill files directly.**
+**CRITICAL: this skill must NEVER modify its own files (commands, skills, agents, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.agents/planning-rules.md` and `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`. if the user asks to change the skill's behavior, create a plan for it — do not edit skill files directly.**
 
 ## step 0: parse intent and gather context
 
@@ -266,7 +266,7 @@ Example (NOTICE: Files block + tests as separate checklist items):
 
 ### Task N: [Final] Update documentation
 - [ ] update README.md if needed
-- [ ] update GEMINI.md / AGENTS.md (or CLAUDE.md) if new patterns discovered
+- [ ] update GEMINI.md / AGENTS.md if new patterns discovered
 - [ ] move this plan to `docs/plans/completed/`
 
 ## Post-Completion

@@ -49,7 +49,7 @@ Set via `userConfig` in plugin.json (prompted at install):
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `external_review_cmd` | *(empty — falls back to codex)* | external review tool command; prompt appended as final argv, findings on stdout |
+| `external_review_cmd` | *(empty — falls back to llm)* | external review tool command; prompt appended as final argv, findings on stdout |
 | `task_retries` | `1` | retries for failed tasks |
 | `review_iterations` | `5` | max fix-and-recheck cycles |
 | `external_review_iterations` | `10` | max external review iterations |
@@ -59,11 +59,11 @@ Set via `userConfig` in plugin.json (prompted at install):
 ### Customization
 Prompts and agent definitions use a four-layer override chain:
 1. Project (AGY/Jetski): `.agents/exec-plan/prompts/` and `.agents/exec-plan/agents/`
-2. Project (Claude Code): `.claude/exec-plan/prompts/` and `.claude/exec-plan/agents/`
-3. User: `$CLAUDE_PLUGIN_DATA/prompts/` and `$CLAUDE_PLUGIN_DATA/agents/` (or `~/.gemini/config/plugins_data/cc-thingz/`)
+2. Project (Antigravity): `.agents/exec-plan/prompts/` and `.agents/exec-plan/agents/`
+3. User: `~/.gemini/config/plugins_data/cc-thingz/prompts/` and `~/.gemini/config/plugins_data/cc-thingz/agents/` (or `~/.gemini/config/plugins_data/cc-thingz/`)
 4. Bundled defaults
 
-Nothing is copied anywhere automatically. Installs before planning 3.10.0 did seed `$CLAUDE_PLUGIN_DATA` with
+Nothing is copied anywhere automatically. Installs before planning 3.10.0 did seed `~/.gemini/config/plugins_data/cc-thingz` with
 copies of every bundled prompt and agent — those copies still shadow the bundled defaults and no longer track
 upgrades, so check that directory and delete anything you did not deliberately edit.
 
@@ -79,7 +79,7 @@ literally, and only the README carries that form. That paragraph is authoritativ
 
 ### Subagent constraint
 
-Subagents in current Antigravity do not have the invoke_subagent tool — they cannot spawn other subagents. `prompts/review.md` is therefore read by the main session orchestrator (as a playbook), not given to a subagent. The 5-specialist fanout runs directly from the main session. Leaf-work prompts (`task.md`, `fixer.md`, `finalizer.md`, `codex-review.md`, `agents/smells.txt`) can be subagent prompts because they don't need to spawn further. Any custom override needing parallel fanout must follow the same playbook pattern.
+Subagents in current Antigravity do not have the invoke_subagent tool — they cannot spawn other subagents. `prompts/review.md` is therefore read by the main session orchestrator (as a playbook), not given to a subagent. The 5-specialist fanout runs directly from the main session. Leaf-work prompts (`task.md`, `fixer.md`, `finalizer.md`, `external-review.md`, `agents/smells.txt`) can be subagent prompts because they don't need to spawn further. Any custom override needing parallel fanout must follow the same playbook pattern.
 
 ## Plan-Review — agent
 

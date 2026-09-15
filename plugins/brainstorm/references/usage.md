@@ -49,7 +49,7 @@ User: "brainstorm a better error handling strategy"
 → Phase 4: user picks "Start now" → implementation begins
 
 User: "/brainstorm:brainstorm add my Go rules to user-level brainstorm rules"
-→ asks what rules to add, writes to $CLAUDE_PLUGIN_DATA/brainstorm-rules.md
+→ asks what rules to add, writes to ~/.gemini/config/plugins_data/cc-thingz/brainstorm-rules.md
 ```
 
 ## Key Principles

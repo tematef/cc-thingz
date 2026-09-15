@@ -49,7 +49,7 @@ If conflicts occur:
   - Tool calls in `SKILL.md` files must use AGY tools (`invoke_subagent`, `run_command`, `ask_question`, etc.) rather than Claude Code tools (`Agent`, `Bash`, `AskUserQuestion`, etc.).
 - If assistance is needed to resolve a conflict, use `ask_question` to confirm the resolution with the user.
 
-### 4. Audit for Claude Code Leaks
+### 4. Audit for Legacy Tool Leaks
 After rebase completes, check if new upstream commits introduced any legacy Claude Code tool calls or paths:
 ```bash
 grep -rn '\bBash tool\b\|\bAgent tool\b\|\bAskUserQuestion\b\|\bEnterPlanMode\b\|\bEnterWorktree\b\|\$CLAUDE_PLUGIN_ROOT' plugins/

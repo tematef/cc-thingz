@@ -6,7 +6,7 @@ Custom rules let you inject project-specific or personal conventions into the pl
 
 Two levels, checked in order (first-found-wins, never merged):
 
-1. **Project-level**: `.agents/planning-rules.md` (or `.claude/planning-rules.md`) in the current working directory
+1. **Project-level**: `.agents/planning-rules.md` in the current working directory
 2. **User-level**: `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md` (per-plugin persistent storage)
 
 When both non-empty files exist, only the project-level file is used. Empty files are treated as absent and fall through to the next level.
@@ -20,9 +20,9 @@ Each skill runs `resolve-rules.sh planning-rules.md <data-dir>` via run_command 
 Ask the make command to manage rules:
 
 - **show rules** — displays current rules and which level they came from
-- **add/update project rules** — writes to `.agents/planning-rules.md` (or `.claude/planning-rules.md`)
+- **add/update project rules** — writes to `.agents/planning-rules.md`
 - **add/update user rules** — writes to `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`
-- **clear project rules** — deletes `.agents/planning-rules.md` and `.claude/planning-rules.md`
+- **clear project rules** — deletes `.agents/planning-rules.md`
 - **clear user rules** — deletes `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`
 
 ## Example Content
