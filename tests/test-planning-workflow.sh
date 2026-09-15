@@ -70,7 +70,7 @@ class ExecWorkflowTests(unittest.TestCase):
                 line for line in SKILL.splitlines()
                 if line.startswith("1. **Resolve the review prompt**")
             )
-            prompt = (EXEC / "references/prompts/codex-review.md").read_text()
+            prompt = (EXEC / "references/prompts/external-review.md").read_text()
             for name, text in (("exec skill", instruction), ("review prompt", prompt)):
                 commands = re.findall(r"`(git diff[^`]*)`", text)
                 self.assertTrue(commands, f"No review command found in {name}")
