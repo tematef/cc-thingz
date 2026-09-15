@@ -50,7 +50,7 @@ show which file and code area the annotation refers to.
 
 ### Step 3: Plan changes
 
-Enter plan mode (EnterPlanMode) to analyze annotations and design the fix approach:
+Enter planning mode to analyze annotations and design the fix approach:
 - list each annotation and which file/code area it refers to
 - describe the planned changes for each annotation
 - get user approval before modifying any code
