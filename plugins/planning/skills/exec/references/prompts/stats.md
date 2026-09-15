@@ -25,7 +25,7 @@ Group subagents by phase using their role or prompt:
 - "QA review", "Code quality review", "Test review", "Implementation review", "Documentation review" → Review phase 1 comprehensive
 - "Fixer", "Fixer for phase 1" → Review phase 1 fixer
 - "Smells reviewer" → Review phase 2 smells
-- "Fixer - external review", "Fixer - codex" → Review phase 3 external review fixer
+- "Fixer - external review", "Fixer - external review" → Review phase 3 external review fixer
 - "Finalizer" → Finalize
 
 A phase's parallel execution detection: if agents within a phase were launched together in a single `invoke_subagent` tool call, mark "parallel". Otherwise "sequential".

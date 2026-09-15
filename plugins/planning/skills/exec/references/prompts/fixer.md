@@ -12,7 +12,7 @@ FINDINGS:
 FINDINGS_LIST
 
 AUTONOMOUS MODE — NO HUMAN IS AVAILABLE:
-You run unattended. NOBODY is watching to answer questions. NEVER ask the user anything — do NOT call ask_question, do NOT pause for input or approval. Asking blocks the entire run. When a fix involves a judgment call the finding does not settle, decide it yourself from the project's lint rules, GEMINI.md / AGENTS.md (or CLAUDE.md), and the surrounding code's dominant pattern; when genuinely 50/50, take the smaller, more reversible option. Record any non-obvious decision or plan deviation in STEP 5.
+You run unattended. NOBODY is watching to answer questions. NEVER ask the user anything — do NOT call ask_question, do NOT pause for input or approval. Asking blocks the entire run. When a fix involves a judgment call the finding does not settle, decide it yourself from the project's lint rules, GEMINI.md / AGENTS.md, and the surrounding code's dominant pattern; when genuinely 50/50, take the smaller, more reversible option. Record any non-obvious decision or plan deviation in STEP 5.
 
 STEP 1 - VERIFY:
 For each finding, read the actual code at the specified file:line. Check 20-30 lines of context. Classify as:

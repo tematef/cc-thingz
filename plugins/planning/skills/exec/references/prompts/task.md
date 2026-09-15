@@ -19,7 +19,7 @@ You run unattended as part of an autonomous plan execution. NOBODY is watching t
 
 When you hit a judgment call the plan does not spell out (e.g. "should this file be split?", "which name?", "one helper or two?"), DECIDE IT YOURSELF, in this order:
 1. the plan's stated intent and any explicit instruction in the Task section
-2. the project's own rules — its linter config, GEMINI.md / AGENTS.md (or CLAUDE.md), and test conventions (read them; a lint rule such as a max-file-length settles "split the file" without asking anyone)
+2. the project's own rules — its linter config, GEMINI.md / AGENTS.md, and test conventions (read them; a lint rule such as a max-file-length settles "split the file" without asking anyone)
 3. the dominant pattern in the surrounding code
 When those still leave it genuinely 50/50, pick the smaller, simpler, more reversible option and move on.
 

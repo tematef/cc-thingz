@@ -1,6 +1,6 @@
 # Review fanout playbook
 
-This file is a playbook for the main orchestrator session — NOT a prompt to spawn into a subagent. Subagents do not have access to the Agent tool in current Claude Code, so the parallel fanout below must be initiated from the main session.
+This file is a playbook for the main orchestrator session — NOT a prompt to spawn into a subagent. Subagents do not have access to the invoke_subagent tool in Antigravity, so the parallel fanout below must be initiated from the main session.
 
 Resolve placeholders (`DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `REVIEW_PHASE`, `RESOLVE_SCRIPT`, `PLUGIN_DATA_DIR`), then follow the instructions below from the main session: launch the specified parallel Agent calls, collect findings from all returned agents, and pass them to the fixer subagent. The orchestrator does NOT fix issues itself — the fixer is a separate subagent that handles fixes.
 
