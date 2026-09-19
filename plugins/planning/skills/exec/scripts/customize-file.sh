@@ -5,7 +5,7 @@
 # e.g.: customize-file.sh agents/quality.txt /path/to/plugin/data
 #
 # with a data-dir, copies to <data-dir>/<path> (user level, all projects).
-# without one, copies to .claude/exec-plan/<path> (project level).
+# without one, copies to .agents/exec-plan/<path> (project level).
 #
 # an override shadows the bundled default permanently -- see the "Customization"
 # paragraph of README.md, which is authoritative for the consequences
@@ -58,7 +58,7 @@ fi
 if [ -n "$data_dir" ]; then
     dest="$data_dir/$path"
 else
-    dest=".claude/exec-plan/$path"
+    dest=".agents/exec-plan/$path"
 fi
 
 # -L as well as -e: a dangling symlink is invisible to -e, and cp would follow it
@@ -75,10 +75,10 @@ fi
 # from the caller, and a symlinked $HOME or ~/.gemini/config is a legitimate setup.
 #
 # the two branches are deliberately asymmetric: at project level the walk stops at the
-# working directory, so `.claude` itself is checked too. that is stricter than the
-# user-level exemption on purpose -- `.claude` comes out of the checked-out repository,
-# not the caller, so a repo shipping `.claude` as a symlink could otherwise redirect the
-# copy anywhere. someone whose `.claude` is symlinked into a dotfiles repo gets a clear
+# working directory, so `.agents` itself is checked too. that is stricter than the
+# user-level exemption on purpose -- `.agents` comes out of the checked-out repository,
+# not the caller, so a repo shipping `.agents` as a symlink could otherwise redirect the
+# copy anywhere. someone whose `.agents` is symlinked into a dotfiles repo gets a clear
 # error and can use the user-level data dir instead
 if [ -n "$data_dir" ]; then
     stop="$data_dir"

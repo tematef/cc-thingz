@@ -34,7 +34,7 @@ class ExecWorkflowTests(unittest.TestCase):
                 self.assertGreater(after.start(), spawn)
                 instruction = after.group()
                 for expected in (
-                    "vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)",
+                    "vcs=$(bash ~/.gemini/config/plugins/planning/skills/exec/scripts/detect-vcs.sh)",
                     "`git status --porcelain` for `git`",
                     "`hg status` for `hg`",
                     "If output is non-empty",

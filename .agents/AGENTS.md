@@ -28,3 +28,18 @@ When contributing to this repository, you must adhere to the following rules:
 
 5. **Upstream Synchronization:**
    To synchronize this fork with upstream updates from `umputun/cc-thingz`, use the `cc-thingz-sync` skill (`plugins/workflow/skills/sync/SKILL.md`). Always ensure our AGY/Jetski adaptations are preserved during rebase conflicts.
+
+6. **Subagent Orchestration Constraints:**
+   - Subagents do not have `invoke_subagent` tool access (no recursive nesting).
+   - Any multi-agent fanout (such as `plugins/planning/skills/exec/references/prompts/review.md`) must be executed directly by the main session orchestrator as a playbook rather than delegated to a child subagent.
+   - Single-subagent prompts perform leaf tasks only (`prompts/task.md`, `prompts/fixer.md`, `prompts/finalizer.md`, `agents/smells.txt`).
+
+7. **Generic Configuration & Documentation Integrity:**
+   - Never hardcode personal paths, machine-specific directories, or private settings. Use environment variables or AGY user-level data directory (`~/.gemini/config/plugins_data/cc-thingz/`).
+   - Keep `README.md` and plugin reference documentation synchronized whenever skills, tools, or workflows are added or modified.
+
+8. **Testing & Verification:**
+   - Run all shell test suites: `for t in tests/test-*.sh; do bash "$t"; done`
+   - Validate YAML frontmatter across all skills: `python3 .github/scripts/check-frontmatter.py .`
+   - Run embedded tests in Python scripts where available: `python3 <script> --test`
+

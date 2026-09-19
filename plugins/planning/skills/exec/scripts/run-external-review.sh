@@ -2,19 +2,15 @@
 # run external code review and return findings on stdout
 # usage: run-external-review.sh "<external_review_cmd>" "<prompt>"
 #
-# with an empty <external_review_cmd>, delegates to run-codex.sh (codex-specific
-# sandbox/model flags, hg handling). with a command set, that command is run
-# instead, with the prompt appended as the final argv element. the "External
-# review contract" section of README.md is authoritative for what the tool must
-# be able to do, emit, and leave untouched -- do not restate it here
+# with an empty or unconfigured <external_review_cmd>, exits 127 with a marker
+# so the orchestrator skips the phase. with a command set, that command is run
+# with the prompt appended as the final argv element.
 #
-# exits 127 when the tool is not on PATH so the caller can skip the phase rather
-# than treat it as a review failure. those two messages, and only those two, carry
+# exits 127 when the tool is not configured or not on PATH so the caller can skip
+# the phase rather than treat it as a review failure. those messages carry
 # the marker "run-external-review:" on stderr, so a 127 raised by the reviewer
 # itself (a wrapper script whose inner tool is missing) stays distinguishable from
-# this one. nothing else written here may carry the marker -- an informational note
-# that did would make a reviewer's own 127 read as "no tool installed" and silently
-# skip the phase
+# this one. nothing else written here may carry the marker.
 
 set -e
 
@@ -28,17 +24,10 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Claude Code's skill-content substitution leaves a ${user_config.KEY} reference
-# untouched when the option has no saved value -- unlike the hook/MCP path, it does
-# not merge in the schema default, so a user who never opened /plugin configure
-# gets the literal token here. treat it as unset and take the codex fallback: the
-# alternative is a 127 that reads as "no review tool installed" and silently skips
-# the phase. (this is also why SKILL.md single-quotes the token -- unquoted, bash
-# fails the whole call with "bad substitution" before this runs)
-# shellcheck disable=SC2016  # the literal, unexpanded token is exactly what we match
+# Unconfigured config token fallback (handles literal ${user_config.KEY} when unexpanded)
+# shellcheck disable=SC2016
 case "$cmd" in
     '${user_config.'*'}')
-        echo "note: external_review_cmd is not configured, using codex" >&2
         cmd=""
         ;;
 esac
@@ -55,16 +44,11 @@ esac
 # split on whitespace so a command carrying flags works, e.g.
 # "mytool review --strict". arguments containing spaces are not supported --
 # wrap anything that needs quoting in a script and point the config at it.
-# an unset or whitespace-only config yields a zero-length array, which must take
-# the codex fallback rather than exit 127 and silently skip the whole phase
 read -ra cmd_args <<< "$cmd"
 
 if [ "${#cmd_args[@]}" -eq 0 ]; then
-    if ! command -v codex > /dev/null 2>&1; then
-        echo "error: run-external-review: codex not on PATH and external_review_cmd is not set" >&2
-        exit 127
-    fi
-    exec bash "$SCRIPT_DIR/run-codex.sh" "$prompt"
+    echo "error: run-external-review: external_review_cmd is not set" >&2
+    exit 127
 fi
 
 if ! command -v "${cmd_args[0]}" > /dev/null 2>&1; then
@@ -72,8 +56,7 @@ if ! command -v "${cmd_args[0]}" > /dev/null 2>&1; then
     exit 127
 fi
 
-# exec so a kill on the background task reaches the reviewer rather than a
-# wrapper shell, matching the codex branch above.
+# exec so a kill on the background task reaches the reviewer rather than a wrapper shell.
 # stdin from /dev/null: an inherited open pipe (background launch) would let a
-# tool that reads stdin block forever, the same failure run-codex.sh guards against
+# tool that reads stdin block forever
 exec "${cmd_args[@]}" "$prompt" < /dev/null

@@ -34,7 +34,17 @@ This repository is an adapted fork of [umputun/cc-thingz](https://github.com/ump
 5. **Upstream Synchronization:**
    - Use the `cc-thingz-sync` skill (`plugins/workflow/skills/sync/SKILL.md`) to rebase changes against `https://github.com/umputun/cc-thingz.git` while preserving AGY/Jetski adaptations.
 
+6. **Subagent Orchestration Constraints:**
+   - Subagents do not have `invoke_subagent` tool access.
+   - Any multi-agent fanout (e.g. `plugins/planning/skills/exec/references/prompts/review.md`) must be executed directly by the main session orchestrator as a playbook rather than delegated to a child subagent.
+   - Single-subagent prompts perform leaf tasks only (`prompts/task.md`, `prompts/fixer.md`, `prompts/finalizer.md`, `agents/smells.txt`).
+
+7. **Generic Configuration & Documentation:**
+   - Never hardcode machine-specific paths or personal settings.
+   - Keep `README.md` updated with every new or modified tool/workflow.
+
 ## Testing
 
 - Shell test scripts live in `tests/`: `for t in tests/test-*.sh; do bash "$t"; done`
-- Python hook scripts include embedded tests where applicable.
+- Python hook scripts include embedded tests where applicable: `python3 <script> --test`
+- YAML frontmatter validation: `python3 .github/scripts/check-frontmatter.py .`
