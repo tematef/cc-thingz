@@ -1,6 +1,6 @@
 #!/bin/bash
-# automated tests for VCS dispatch in all four exec scripts
-# covers detect-branch.sh, create-branch.sh, stage-and-commit.sh, run-codex.sh
+# automated tests for VCS dispatch in exec scripts
+# covers detect-branch.sh, create-branch.sh, stage-and-commit.sh, move-plan.sh
 # (git + hg paths) plus non-VCS exit-code propagation via set -e
 # scaffolds temp git and hg repos and asserts expected outputs
 
@@ -12,7 +12,6 @@ EXEC_SCRIPTS_DIR="$REPO_ROOT/plugins/planning/skills/exec/scripts"
 DETECT_BRANCH="$EXEC_SCRIPTS_DIR/detect-branch.sh"
 CREATE_BRANCH="$EXEC_SCRIPTS_DIR/create-branch.sh"
 STAGE_AND_COMMIT="$EXEC_SCRIPTS_DIR/stage-and-commit.sh"
-RUN_CODEX="$EXEC_SCRIPTS_DIR/run-codex.sh"
 MOVE_PLAN="$EXEC_SCRIPTS_DIR/move-plan.sh"
 
 passed=0
@@ -757,105 +756,10 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
 fi
 
 echo ""
-echo "testing VCS dispatch: run-codex.sh"
-echo "=================================="
-
-# create a codex stub that prints each argument on its own line and exits 0.
-# using a unique dir per run keeps the test hermetic against any real codex install.
-STUB_DIR="$(mk_tmp)"
-cat >"$STUB_DIR/codex" <<'STUB'
-#!/bin/bash
-for arg in "$@"; do
-    printf '%s\n' "$arg"
-done
-STUB
-chmod +x "$STUB_DIR/codex"
-
-# test 15: git repo -> codex called WITHOUT --skip-git-repo-check
-echo ""
-echo "test 15: git repo -> codex invocation has no --skip-git-repo-check"
-GIT_RC="$(mk_tmp)"
-make_git_repo "$GIT_RC" main
-stub_out="$(cd "$GIT_RC" && PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_not_contains "git: no --skip-git-repo-check" "$stub_out" "--skip-git-repo-check"
-assert_contains "git: exec is present" "$stub_out" "exec"
-assert_contains "git: --sandbox is present" "$stub_out" "--sandbox"
-assert_contains "git: -c model= flag present" "$stub_out" "model=gpt-5.5"
-assert_contains "git: -c model_reasoning_effort= flag present" "$stub_out" "model_reasoning_effort=xhigh"
-assert_contains "git: -c stream_idle_timeout_ms= flag present" "$stub_out" "stream_idle_timeout_ms=3600000"
-assert_not_contains "git: no project_doc flag (dead Codex config key, removed)" "$stub_out" "project_doc"
-assert_contains "git: prompt is passed through" "$stub_out" "hello prompt"
-
-# test 15b: git repo with CODEX_MODEL override -> model is overridden
-echo ""
-echo "test 15b: git repo with CODEX_MODEL override"
-stub_out="$(cd "$GIT_RC" && CODEX_MODEL=gpt-5.6 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_contains "git: CODEX_MODEL env var overrides model" "$stub_out" "model=gpt-5.6"
-assert_not_contains "git: default model not used when override set" "$stub_out" "model=gpt-5.5"
-
-# test 15c: CODEX_NO_OVERRIDES=1 suppresses all -c flags -- for proxies that reject them
-echo ""
-echo "test 15c: CODEX_NO_OVERRIDES=1 suppresses -c overrides"
-stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=1 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_not_contains "git: no -c model= when CODEX_NO_OVERRIDES=1" "$stub_out" "model=gpt-5.5"
-assert_not_contains "git: no -c model_reasoning_effort= when CODEX_NO_OVERRIDES=1" "$stub_out" "model_reasoning_effort"
-assert_not_contains "git: no -c stream_idle_timeout_ms= when CODEX_NO_OVERRIDES=1" "$stub_out" "stream_idle_timeout_ms"
-# non -c args (exec / --sandbox / prompt) must still be there
-assert_contains "git: exec still present with CODEX_NO_OVERRIDES=1" "$stub_out" "exec"
-assert_contains "git: --sandbox still present with CODEX_NO_OVERRIDES=1" "$stub_out" "--sandbox"
-assert_contains "git: prompt still passed with CODEX_NO_OVERRIDES=1" "$stub_out" "hello prompt"
-
-# test 15d: only the literal "1" activates suppression -- other values must NOT silently turn it on.
-# guards against the "set to 1 to enable" semantic surprise where someone tries =0 to disable
-# and accidentally enables it.
-echo ""
-echo "test 15d: CODEX_NO_OVERRIDES=0 does NOT activate suppression"
-stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=0 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=0" "$stub_out" "model=gpt-5.5"
-
-echo ""
-echo "test 15e: CODEX_NO_OVERRIDES=false does NOT activate suppression"
-stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=false PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=false" "$stub_out" "model=gpt-5.5"
-
-echo ""
-echo "test 15f: CODEX_NO_OVERRIDES=no does NOT activate suppression"
-stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=no PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=no" "$stub_out" "model=gpt-5.5"
-
-if [ "$HG_AVAILABLE" -eq 1 ]; then
-    # test 16: hg repo -> codex called WITH --skip-git-repo-check positioned
-    # right after 'exec' (before --sandbox)
-    echo ""
-    echo "test 16: hg repo -> codex has --skip-git-repo-check immediately after exec"
-    HG_RC="$(mk_tmp)"
-    make_hg_repo "$HG_RC"
-    stub_out="$(cd "$HG_RC" && PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-    assert_contains "hg: --skip-git-repo-check flag is present" "$stub_out" "--skip-git-repo-check"
-    assert_contains "hg: exec is present" "$stub_out" "exec"
-    assert_contains "hg: --sandbox is present" "$stub_out" "--sandbox"
-    assert_contains "hg: -c model= flag present" "$stub_out" "model=gpt-5.5"
-    assert_contains "hg: -c model_reasoning_effort= flag present" "$stub_out" "model_reasoning_effort=xhigh"
-    assert_not_contains "hg: no project_doc flag (dead Codex config key, removed)" "$stub_out" "project_doc"
-    assert_contains "hg: prompt is passed through" "$stub_out" "hello prompt"
-
-    # verify ordering: exec, then --skip-git-repo-check, then --sandbox
-    # the stub outputs one arg per line, so we can directly index by line
-    line1="$(printf '%s\n' "$stub_out" | sed -n '1p')"
-    line2="$(printf '%s\n' "$stub_out" | sed -n '2p')"
-    line3="$(printf '%s\n' "$stub_out" | sed -n '3p')"
-    line4="$(printf '%s\n' "$stub_out" | sed -n '4p')"
-    assert_output "hg: arg 1 is 'exec'" "exec" "$line1"
-    assert_output "hg: arg 2 is '--skip-git-repo-check'" "--skip-git-repo-check" "$line2"
-    assert_output "hg: arg 3 is '--sandbox'" "--sandbox" "$line3"
-    assert_output "hg: arg 4 is 'read-only'" "read-only" "$line4"
-fi
-
-echo ""
 echo "testing VCS dispatch: non-VCS dir propagation (set -e)"
 echo "======================================================"
 
-# test 17-20: each of the four exec scripts must exit non-zero in a non-VCS dir
+# test 17-19: each of the exec scripts must exit non-zero in a non-VCS dir
 # (detect-vcs.sh exits 1; set -e in the caller must propagate without falling through
 # to the git/hg code paths)
 EMPTY_DIR="$(mk_tmp)"
@@ -877,12 +781,6 @@ echo "test 19: stage-and-commit.sh exits non-zero in empty dir"
 rc=0
 (cd "$EMPTY_DIR" && bash "$STAGE_AND_COMMIT" "msg" file.txt >/dev/null 2>&1) || rc=$?
 assert_exit_nonzero "stage-and-commit.sh: empty dir exits non-zero" "$rc"
-
-echo ""
-echo "test 20: run-codex.sh exits non-zero in empty dir"
-rc=0
-(cd "$EMPTY_DIR" && PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "prompt" >/dev/null 2>&1) || rc=$?
-assert_exit_nonzero "run-codex.sh: empty dir exits non-zero" "$rc"
 
 echo ""
 echo "testing VCS dispatch: move-plan.sh"

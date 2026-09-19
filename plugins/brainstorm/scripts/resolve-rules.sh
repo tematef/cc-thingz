@@ -5,7 +5,7 @@
 #
 # data-dir: plugin data directory path, passed from SKILL.md where
 # ~/.gemini/config/plugins_data/cc-thingz is text-substituted by the plugin framework.
-# falls back to $CLAUDE_PLUGIN_DATA env var if not provided as argument.
+# falls back to $GEMINI_PLUGIN_DATA or $CLAUDE_PLUGIN_DATA env var if not provided as argument.
 #
 # checks in order (first-found-wins, not merged):
 #   1. .agents/<filename> (project override - AGY/Jetski)
@@ -21,7 +21,7 @@ if [ -z "$filename" ]; then
 fi
 
 # use argument if provided, fall back to env var
-data_dir="${2:-$CLAUDE_PLUGIN_DATA}"
+data_dir="${2:-${GEMINI_PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-}}}"
 
 if [ -f ".agents/$filename" ] && [ -s ".agents/$filename" ]; then
     cat ".agents/$filename"
