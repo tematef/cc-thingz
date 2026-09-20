@@ -57,4 +57,4 @@ bash plugins/agterm-ide-launcher/scripts/uninstall-keymap.sh
 | `scripts/open-in-ide.sh` | Main launcher (called by agterm keymap command) |
 | `scripts/install-keymap.sh` | Registers the shortcut in `~/.config/agterm/keymap.conf` |
 | `scripts/uninstall-keymap.sh` | Removes the shortcut from `keymap.conf` |
-| `skills/agterm-ide/SKILL.md` | AGY skill for install/configure/uninstall guidance |
+
