@@ -403,7 +403,6 @@ Keyboard shortcut for agterm that opens the current session's project directory 
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
-| skill | `/agterm-ide-launcher:agterm-ide` | Install, configure, or uninstall the IDE shortcut |
 | script | `ctrl+shift+e` (default) | Agterm keymap command — shows picker, launches IDE |
 
 **open-in-ide.sh** — agterm custom command bound via `keymap.conf`. When triggered, it calls `agtermctl pick open` to display a native Yes/No fuzzy picker. If "Yes" is selected, it launches `antigravity-ide` (or the configured binary) with the session's working directory. Configuration is read from `~/.gemini/config/plugins_data/cc-thingz/agterm-ide-launcher.conf` (shortcut chord, IDE binary path, prompt text).
