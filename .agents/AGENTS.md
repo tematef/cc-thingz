@@ -43,3 +43,8 @@ When contributing to this repository, you must adhere to the following rules:
    - Validate YAML frontmatter across all skills: `python3 .github/scripts/check-frontmatter.py .`
    - Run embedded tests in Python scripts where available: `python3 <script> --test`
 
+9. **No Remote CI / GitHub Actions:**
+   - This repository does not use GitHub Actions or remote CI workflows (`.github/workflows/` must remain deleted).
+   - All linting, tests, and verifications are executed locally on demand.
+   - When synchronizing with upstream using `cc-thingz-sync`, discard any incoming `.github/workflows/` files.
+

@@ -43,6 +43,11 @@ This repository is an adapted fork of [umputun/cc-thingz](https://github.com/ump
    - Never hardcode machine-specific paths or personal settings.
    - Keep `README.md` updated with every new or modified tool/workflow.
 
+8. **No Remote CI Workflows:**
+   - Do not create or reintroduce GitHub Actions workflow files under `.github/workflows/`.
+   - All tests and validation run locally (`tests/test-*.sh`, `python3 .github/scripts/check-frontmatter.py .`).
+   - Discard any upstream `.github/workflows/` files during sync.
+
 ## Testing
 
 - Shell test scripts live in `tests/`: `for t in tests/test-*.sh; do bash "$t"; done`
