@@ -147,6 +147,7 @@ To keep plugins current automatically, enable `/plugin` → **Marketplaces** →
 | [thinking-tools](#thinking-tools) | Analytical thinking — dialectic analysis, root cause investigation, codex consultation |
 | [skill-eval](#skill-eval) | Forces skill evaluation before every response |
 | [workflow](#workflow) | Session helpers and deferred-work backlog — knowledge capture, confusion handling, clipboard copy, backlog items |
+| [agterm-ide-launcher](#agterm-ide-launcher) | Keyboard shortcut to open the current agterm session in Antigravity IDE via a native Yes/No picker |
 
 ### brainstorm
 
@@ -395,6 +396,24 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 **txt-copy** — copies generated text (emails, messages, letters) to clipboard via a timestamped temp file. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
 
 **backlog** — maintains `docs/backlog/`, one markdown file per deferred item, for work that is real but not being done now. Each item carries `worth` (yes/later/no) and `added` (ISO date) in frontmatter, plus `where` (path:line) when the item is anchored to one place, with a free body. Lists the backlog with each present `where` verified against the current tree so stale anchors are reported as stale rather than as work, takes a slug argument to jump straight to one item, and `--all` to walk every item to a disposition one at a time. Either form briefs the item first — summary, effort, blast radius, materiality — so the call is made against facts rather than the item's own account. Before appending it finds candidates by the `where` path and slug, settling it on the defect each one claims rather than on a shared path. No checkbox and no in-progress marker: the item is deleted in the commit that lands its fix. Refuses to write into a branch other than the repository default without asking first. Git only — the lifecycle is expressed in `git rm`, branch detection, and staging.
+
+### agterm-ide-launcher
+
+Keyboard shortcut for agterm that opens the current session's project directory in Antigravity IDE with a confirmation popup.
+
+| Component | Trigger | Description |
+|-----------|---------|-------------|
+| skill | `/agterm-ide-launcher:agterm-ide` | Install, configure, or uninstall the IDE shortcut |
+| script | `ctrl+shift+e` (default) | Agterm keymap command — shows picker, launches IDE |
+
+**open-in-ide.sh** — agterm custom command bound via `keymap.conf`. When triggered, it calls `agtermctl pick open` to display a native Yes/No fuzzy picker. If "Yes" is selected, it launches `antigravity-ide` (or the configured binary) with the session's working directory. Configuration is read from `~/.gemini/config/plugins_data/cc-thingz/agterm-ide-launcher.conf` (shortcut chord, IDE binary path, prompt text).
+
+**install-keymap.sh** — idempotent installer that appends the `command` directive to `~/.config/agterm/keymap.conf` and runs `agtermctl keymap reload`. Uses a marker comment for clean removal.
+
+**uninstall-keymap.sh** — removes the keymap entry by marker and reloads.
+
+Prerequisites: agterm, `agtermctl` on PATH, Antigravity IDE installed.
+
 
 ## Custom Rules
 
