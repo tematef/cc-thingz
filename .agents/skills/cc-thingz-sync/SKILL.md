@@ -45,8 +45,17 @@ If conflicts occur:
   - `plugin.json` in each plugin directory must remain.
   - `hooks.json` must remain at the root of `plugins/<name>/hooks.json` (not under `hooks/`).
   - `.agents/` context files (`AGENTS.md`, `CONTEXT.md`) and `install.sh` must be preserved.
-  - Hook implementations (`plan-review-hook.py`, `skill-forced-eval-hook.sh`) must maintain AGY `Stop` / `PreInvocation` JSON contracts.
+  - Hook implementations (`autonomous-exec-hook.py`, `plan-review-hook.py`, `skill-forced-eval-hook.sh`) must maintain AGY `PreToolUse` / `Stop` / `PreInvocation` JSON contracts.
   - Tool calls in `SKILL.md` files must use AGY tools (`invoke_subagent`, `run_command`, `ask_question`, etc.) rather than Claude Code tools (`Agent`, `Bash`, `AskUserQuestion`, etc.).
+- **Always discard excluded upstream plugins, skills, and CI workflows** (`plugins/release-tools`, `plugins/review/skills/git-review`, `plugins/review/skills/pr`, `tests/test-release-tools.sh`, `.github/workflows`) if upstream commits modify or reintroduce them:
+  ```bash
+  git rm -rf --ignore-unmatch \
+    plugins/release-tools \
+    plugins/review/skills/git-review \
+    plugins/review/skills/pr \
+    tests/test-release-tools.sh \
+    .github/workflows
+  ```
 - If assistance is needed to resolve a conflict, use `ask_question` to confirm the resolution with the user.
 
 ### 4. Audit for Legacy Tool Leaks

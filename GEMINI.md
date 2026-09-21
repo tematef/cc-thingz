@@ -32,7 +32,7 @@ This repository is an adapted fork of [umputun/cc-thingz](https://github.com/ump
    - User-level persistent data lives in `~/.gemini/config/plugins_data/cc-thingz/`.
 
 5. **Upstream Synchronization:**
-   - Use the `cc-thingz-sync` skill (`plugins/workflow/skills/sync/SKILL.md`) to rebase changes against `https://github.com/umputun/cc-thingz.git` while preserving AGY/Jetski adaptations.
+   - Use the `cc-thingz-sync` skill (`.agent/skills/cc-thingz-sync/SKILL.md`) to rebase changes against `https://github.com/umputun/cc-thingz.git` while preserving AGY/Jetski adaptations and discarding excluded upstream skills.
 
 6. **Subagent Orchestration Constraints:**
    - Subagents do not have `invoke_subagent` tool access.
@@ -47,6 +47,10 @@ This repository is an adapted fork of [umputun/cc-thingz](https://github.com/ump
    - Do not create or reintroduce GitHub Actions workflow files under `.github/workflows/`.
    - All tests and validation run locally (`tests/test-*.sh`, `python3 .github/scripts/check-frontmatter.py .`).
    - Discard any upstream `.github/workflows/` files during sync.
+
+9. **Excluded Upstream Plugins & Skills (Never Re-import on Sync):**
+   - `plugins/release-tools/` (`last-tag`, `new`), `plugins/review/skills/git-review/`, `plugins/review/skills/pr/`, and `tests/test-release-tools.sh` are permanently removed from this fork (`revmux` replaces `git-review` and `pr`).
+   - Always discard (`git rm -rf --ignore-unmatch`) these paths if upstream commits touch or reintroduce them during `cc-thingz-sync`.
 
 ## Testing
 
