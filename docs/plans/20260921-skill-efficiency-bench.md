@@ -212,7 +212,7 @@ Write documentation covering:
 - Recommended workflow: audit → prune → benchmark → compare → iterate
 - Example output snippets
 
-- [ ] complete
+- [x] complete
 
 ---
 
