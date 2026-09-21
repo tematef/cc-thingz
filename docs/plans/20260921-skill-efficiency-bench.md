@@ -167,7 +167,7 @@ Each prompt has:
 
 Include prompts for: baseline (no skill), review, brainstorm, planning/exec, code refactor, and a "confusing" prompt that might misroute.
 
-- [ ] complete
+- [x] complete
 
 ---
 
