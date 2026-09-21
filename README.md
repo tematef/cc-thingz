@@ -199,8 +199,15 @@ Structured implementation planning with interactive annotation review and autono
 |-----------|---------|-------------|
 | command | `/planning:make <desc>` | Structured implementation plan with interactive review loop |
 | skill | `/planning:exec [plan-file]` | Autonomous plan executor — task loop, multi-phase review, optional finalize |
+| hook | `PreToolUse` (`autonomous-exec-guard`) | 3-tier permission guard auto-approving read-only/test/scratch commands in interactive mode and workspace edits during `/exec`, while blocking remote pushes and destructive commands |
 | hook | `PreToolUse` / CLI | Plan annotation in `$EDITOR` with diff-based feedback loop |
 | agent | `plan-review` | Automated plan quality review — completeness, over-engineering, testing |
+
+**autonomous-exec-guard (`plugins/planning/scripts/autonomous-exec-hook.py`)** — eliminates repetitive command approval prompts in Jetski/Antigravity without requiring `--dangerously-skip-permissions`:
+- **Tier 1 (Interactive & Autonomous):** Evaluates compound pipelines per segment and auto-approves read-only inspection commands (`ls`, `cat`, `grep`, `find` without `-delete`/`-exec`, `sed` without `-i`, read-only `git`/`hg` commands), test runners/linters (`npx jest`, `npx eslint`, `pytest`, `cargo test`, `go test`), anchored `cc-thingz`/`revmux` scripts, and operations targeting `/tmp/*`, `.worktrees/`, or `.gemini/jetski/brain/.../scratch/`.
+- **Tier 2 (Autonomous `/exec` & Subagents):** Auto-approves workspace edits and git commits when an `/exec` run is active (tracked via `~/.gemini/config/plugins_data/cc-thingz/autonomous-active`) or inside `.worktrees/`.
+- **Tier 3 (Hard Safety Gate):** Always forces confirmation (`force_ask`) for `git push`, `hg push`, `sudo`/`su`/`doas`, `rm -rf /` (`rm -fr /`), `curl | bash`, and destructive disk commands.
+- Registered globally by `./install.sh` (which also supports `--list`, `--exclude <skills>`, and `--restore [skills]`). To disable globally, set `"enabled": false` on `"autonomous-exec-guard"` in `~/.gemini/config/hooks.json`.
 
 **plan command** — creates a plan file in `docs/plans/yyyymmdd-<task-name>.md` through interactive context gathering:
 - **Step 0** — parses intent and explores codebase for relevant context

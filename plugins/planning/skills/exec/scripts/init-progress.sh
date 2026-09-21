@@ -21,4 +21,8 @@ Started: $(date '+%Y-%m-%d %H:%M:%S')
 ---
 EOF
 
+MARKER_DIR="$HOME/.gemini/config/plugins_data/cc-thingz"
+mkdir -p "$MARKER_DIR" 2>/dev/null || true
+pwd -P > "$MARKER_DIR/autonomous-active" 2>/dev/null || true
+
 echo "$file"
