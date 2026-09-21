@@ -196,7 +196,7 @@ The script should document clearly how to run a comparison:
 python3 parse-transcript.py reports/full-skills/ --compare reports/minimal/
 ```
 
-- [ ] complete
+- [x] complete
 
 ---
 
