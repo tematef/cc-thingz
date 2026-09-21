@@ -16,15 +16,23 @@ exec >> "$LOG" 2>&1
 echo "=== $(date '+%Y-%m-%d %H:%M:%S') ==="
 
 # Ensure standard PATH for GUI app subprocesses
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$HOME/.local/bin:$HOME/bin:$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$HOME/.local/bin:$HOME/bin:$HOME/.jetski/jetski/bin:$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
 
 CONF="$HOME/.gemini/config/plugins_data/cc-thingz/agterm-ide-launcher.conf"
+ALT_CONF="$HOME/.config/agterm/agterm-ide-launcher.conf"
 
 # ── defaults ──────────────────────────────────────────────────────────────────
-IDE_BIN="antigravity-ide"
-PICKER_PROMPT="Open in Antigravity IDE?"
+if [ -x "$HOME/.jetski/jetski/bin/jetski" ]; then
+    IDE_BIN="$HOME/.jetski/jetski/bin/jetski"
+    PICKER_PROMPT="Open in Jetski IDE?"
+else
+    IDE_BIN="antigravity-ide"
+    PICKER_PROMPT="Open in Antigravity IDE?"
+fi
 
 # ── source user config (if present) ──────────────────────────────────────────
+# shellcheck disable=SC1090
+[ -f "$ALT_CONF" ] && . "$ALT_CONF"
 # shellcheck disable=SC1090
 [ -f "$CONF" ] && . "$CONF"
 
@@ -88,11 +96,18 @@ if [ "$IS_YES" -eq 1 ]; then
     echo "User confirmed Yes. Launching IDE..."
     LAUNCHED=0
 
-    # Method 1: On macOS, use open -a if Antigravity IDE.app is installed and IDE_BIN is default
-    if [ "$IDE_BIN" = "antigravity-ide" ] && [ -d "/Applications/Antigravity IDE.app" ]; then
-        echo "Launching via open -a 'Antigravity IDE' '$PROJECT_DIR'..."
-        if open -a "Antigravity IDE" "$PROJECT_DIR"; then
-            LAUNCHED=1
+    # Method 1: On macOS, use open -a if Antigravity IDE.app or Jetski.app is installed and IDE_BIN is default
+    if [ "$IDE_BIN" = "antigravity-ide" ]; then
+        if [ -d "/Applications/Antigravity IDE.app" ]; then
+            echo "Launching via open -a 'Antigravity IDE' '$PROJECT_DIR'..."
+            if open -a "Antigravity IDE" "$PROJECT_DIR"; then
+                LAUNCHED=1
+            fi
+        elif [ -d "/Applications/Jetski.app" ]; then
+            echo "Launching via open -a 'Jetski' '$PROJECT_DIR'..."
+            if open -a "Jetski" "$PROJECT_DIR"; then
+                LAUNCHED=1
+            fi
         fi
     fi
 
@@ -101,6 +116,8 @@ if [ "$IS_YES" -eq 1 ]; then
         IDE_CMD="$IDE_BIN"
         if ! command -v "$IDE_CMD" >/dev/null 2>&1 && [ ! -x "$IDE_CMD" ]; then
             for candidate in \
+                "$HOME/.jetski/jetski/bin/jetski" \
+                "/Applications/Jetski.app/Contents/Resources/app/bin/jetski" \
                 "$HOME/.antigravity-ide/antigravity-ide/bin/antigravity-ide" \
                 "/Applications/Antigravity IDE.app/Contents/Resources/bin/antigravity-ide" \
                 "/Applications/Antigravity IDE.app/Contents/MacOS/Electron"; do

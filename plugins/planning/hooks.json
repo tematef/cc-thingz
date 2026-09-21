@@ -1,4 +1,18 @@
 {
+  "autonomous-exec-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/autonomous-exec-hook.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
   "plan-annotate": {
     "Stop": [
       {

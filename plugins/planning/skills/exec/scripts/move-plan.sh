@@ -14,6 +14,9 @@ fi
 plan="$1"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Always clear autonomous execution marker when move-plan.sh is invoked at the end of /exec
+rm -f "$HOME/.gemini/config/plugins_data/cc-thingz/autonomous-active" /tmp/cc-thingz-autonomous-active 2>/dev/null || true
+
 # already under completed/ — nothing to do
 case "$plan" in
 */completed/*)
