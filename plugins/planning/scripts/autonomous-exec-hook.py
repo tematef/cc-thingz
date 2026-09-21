@@ -132,7 +132,7 @@ def is_dangerous_command(cmd: str) -> bool:
 
 
 def is_safe_special_target(path_str: str, safe_vars: set[str] | None = None) -> bool:
-    """Return True if a single path token is inside /tmp/*, .worktrees/, or brain/.../scratch/ without .. traversal."""
+    """Return True if a single path token is inside /tmp/*, .worktrees/, plugins_data/, or brain/.../scratch/ without .. traversal."""
     cleaned = path_str.strip("\"'")
     if not cleaned or "autonomous-active" in cleaned:
         return False
@@ -147,24 +147,21 @@ def is_safe_special_target(path_str: str, safe_vars: set[str] | None = None) -> 
         for var in safe_vars:
             if cleaned.startswith(f"${var}/") or cleaned.startswith(f"${{{var}}}/"):
                 return True
-    if re.search(r"\.gemini/jetski/brain/[^/\s]+/scratch(?:/|$)", cleaned):
+    if re.search(r"\.gemini/(?:antigravity-cli|antigravity|jetski)/brain/[^/\s]+/scratch(?:/|$)", cleaned):
+        return True
+    if re.search(r"(?:^|/)(?:~|\$HOME|Users/[^/\s]+|home/[^/\s]+)?/?\.gemini/config/plugins_data(?:/|$)", cleaned):
         return True
     return False
 
 
 def is_anchored_plugin_script(script_token: str) -> bool:
-    """Return True if script_token is an anchored path to a known cc-thingz or revmux script."""
+    """Return True if script_token is an anchored path to a known plugin or custom skill script."""
     cleaned = script_token.strip("\"'")
-    base = os.path.basename(cleaned)
     if cleaned == "./install.sh" or re.match(r"^(?:\./)?tests/test-[A-Za-z0-9_.-]+\.sh$", cleaned):
         return True
-    if base not in CC_THINGZ_SCRIPTS:
-        return False
     return bool(
         re.search(
-            r"(?:^|/)(?:plugins/[^/\s]+/(?:skills/[^/\s]+/)?scripts|\.gemini/config/(?:skills|plugins)/[^/\s]+/scripts)/"
-            + re.escape(base)
-            + r"$",
+            r"(?:^|/)(?:plugins/[^/\s]+/(?:skills/[^/\s]+/)?scripts|\.gemini/config/(?:skills|plugins)/[^/\s]+/(?:skills/[^/\s]+/)?scripts|\.agents/(?:skills/[^/\s]+/)?scripts)/[^/\s]+$",
             cleaned,
         )
     )
@@ -339,12 +336,42 @@ def is_safe_git_or_hg(tokens: list[str]) -> bool:
     return False
 
 
+def strip_unquoted_parens(s: str) -> str:
+    """Replace unquoted, unescaped parentheses with spaces so grouping subshells can be tokenized safely."""
+    out = []
+    in_single = False
+    in_double = False
+    escaped = False
+    for ch in s:
+        if escaped:
+            out.append(ch)
+            escaped = False
+            continue
+        if ch == "\\" and not in_single:
+            escaped = True
+            out.append(ch)
+            continue
+        if ch == "'" and not in_double:
+            in_single = not in_double
+            out.append(ch)
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            out.append(ch)
+            continue
+        if not in_single and not in_double and ch in ("(", ")"):
+            out.append(" ")
+            continue
+        out.append(ch)
+    return "".join(out)
+
+
 def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bool, bool]:
     """Evaluate a single pipeline/command segment for Tier 1 safety.
 
     Returns (is_safe, needs_write_override).
     """
-    seg = segment.strip()
+    seg = strip_unquoted_parens(segment).strip()
     if not seg or seg.startswith("#"):
         return True, False
 
@@ -426,22 +453,71 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
 
     if cmd_name == "find":
         unsafe_find_flags = {
-            "-delete", "-exec", "-execdir", "-ok", "-okdir", "-fprint", "-fprint0", "-fls",
+            "-delete", "-ok", "-okdir", "-fprint", "-fprint0", "-fls",
         }
-        for t in [tok.strip("\"'") for tok in tokens[1:]]:
+        idx = 1
+        exec_writes = False
+        while idx < len(tokens):
+            t = tokens[idx].strip("\"'")
             if t in unsafe_find_flags:
                 return False, False
-        return True, redir_writes
+            if t in ("-exec", "-execdir"):
+                # Find terminator: +, ;, or \;
+                end_idx = idx + 1
+                while end_idx < len(tokens):
+                    end_t = tokens[end_idx].strip("\"'")
+                    if end_t in (";", "\\;", "+"):
+                        break
+                    end_idx += 1
+                exec_cmd_tokens = [
+                    tok for tok in tokens[idx + 1 : end_idx]
+                    if tok.strip("\"'") != "{}"
+                ]
+                if not exec_cmd_tokens:
+                    return False, False
+                exec_sub_seg = " ".join(exec_cmd_tokens)
+                sub_ok, sub_write = is_safe_segment(exec_sub_seg, safe_vars)
+                if not sub_ok:
+                    return False, False
+                if sub_write:
+                    exec_writes = True
+                idx = end_idx + 1
+                continue
+            idx += 1
+        return True, (redir_writes or exec_writes)
 
     if cmd_name == "fd":
-        for t in [tok.strip("\"'") for tok in tokens[1:]]:
+        idx = 1
+        exec_writes = False
+        while idx < len(tokens):
+            t = tokens[idx].strip("\"'")
             if (
                 t in ("-x", "-X", "--exec", "--exec-batch")
-                or t.startswith("--exec")
+                or t.startswith("--exec=")
                 or re.match(r"^-[a-zA-Z0-9]*[xX]", t)
             ):
-                return False, False
-        return True, redir_writes
+                end_idx = idx + 1
+                while end_idx < len(tokens):
+                    end_t = tokens[end_idx].strip("\"'")
+                    if end_t in (";", "\\;"):
+                        break
+                    end_idx += 1
+                exec_cmd_tokens = [
+                    tok for tok in tokens[idx + 1 : end_idx]
+                    if tok.strip("\"'") != "{}"
+                ]
+                if not exec_cmd_tokens:
+                    return False, False
+                exec_sub_seg = " ".join(exec_cmd_tokens)
+                sub_ok, sub_write = is_safe_segment(exec_sub_seg, safe_vars)
+                if not sub_ok:
+                    return False, False
+                if sub_write:
+                    exec_writes = True
+                idx = end_idx + 1
+                continue
+            idx += 1
+        return True, (redir_writes or exec_writes)
 
     if cmd_name == "tee":
         file_args = [tok.strip("\"'") for tok in tokens[1:] if not tok.strip("\"'").startswith("-")]
@@ -540,17 +616,119 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
     return (cmd_name in SAFE_READ_COMMANDS), redir_writes
 
 
+def extract_command_substitutions(cmd: str) -> tuple[list[str] | None, str]:
+    """Extract $(...) command substitutions outside single quotes.
+
+    Returns (subs_list, sanitized_cmd) or (None, cmd) if malformed or unbalanced.
+    """
+    subs = []
+    out = []
+    i = 0
+    n = len(cmd)
+    in_single = False
+    in_double = False
+    escaped = False
+
+    while i < n:
+        ch = cmd[i]
+        if escaped:
+            out.append(ch)
+            escaped = False
+            i += 1
+            continue
+        if ch == "\\" and not in_single:
+            escaped = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            out.append(ch)
+            i += 1
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            out.append(ch)
+            i += 1
+            continue
+
+        if not in_single and ch == "$" and i + 1 < n and cmd[i + 1] == "(":
+            # Found start of $(...)
+            depth = 1
+            j = i + 2
+            sub_inner = []
+            sub_in_single = False
+            sub_in_double = False
+            sub_escaped = False
+            while j < n and depth > 0:
+                sub_ch = cmd[j]
+                if sub_escaped:
+                    sub_inner.append(sub_ch)
+                    sub_escaped = False
+                    j += 1
+                    continue
+                if sub_ch == "\\" and not sub_in_single:
+                    sub_escaped = True
+                    sub_inner.append(sub_ch)
+                    j += 1
+                    continue
+                if sub_ch == "'" and not sub_in_double:
+                    sub_in_single = not in_single
+                    sub_inner.append(sub_ch)
+                    j += 1
+                    continue
+                if sub_ch == '"' and not sub_in_single:
+                    sub_in_double = not in_double
+                    sub_inner.append(sub_ch)
+                    j += 1
+                    continue
+                if not sub_in_single and not sub_in_double:
+                    if sub_ch == "(":
+                        depth += 1
+                    elif sub_ch == ")":
+                        depth -= 1
+                        if depth == 0:
+                            break
+                sub_inner.append(sub_ch)
+                j += 1
+            if depth != 0:
+                return None, cmd
+            subs.append("".join(sub_inner))
+            out.append("__SAFE_SUB__")
+            i = j + 1
+            continue
+
+        out.append(ch)
+        i += 1
+
+    return subs, "".join(out)
+
+
 def evaluate_tier1_command(cmd: str) -> tuple[bool, bool]:
     """Evaluate if the entire command (including pipelines/chains) is safe in Tier 1.
 
     Returns (is_safe, needs_write_override).
     """
-    segments = split_command_segments(cmd)
+    subs, sanitized_cmd = extract_command_substitutions(cmd)
+    if subs is None:
+        return False, False
+
+    sub_writes = False
+    for sub in subs:
+        if not sub.strip():
+            continue
+        sub_ok, sub_w = evaluate_tier1_command(sub)
+        if not sub_ok:
+            return False, False
+        if sub_w:
+            sub_writes = True
+
+    segments = split_command_segments(sanitized_cmd)
     if segments is None:
         return False, False
 
     safe_vars: set[str] = set()
-    needs_write = False
+    needs_write = sub_writes
     for seg in segments:
         if not seg.strip():
             continue
@@ -727,6 +905,28 @@ def evaluate_hook(payload: dict) -> dict:
     if not cmd:
         return ask_response()
 
+    # Unwrap double-encoded JSON string or quoted command if emitted with outer quotes
+    cleaned_cmd = cmd.strip()
+    if (cleaned_cmd.startswith('"') and cleaned_cmd.endswith('"')) or (
+        cleaned_cmd.startswith("'") and cleaned_cmd.endswith("'")
+    ):
+        if cleaned_cmd.startswith('"'):
+            try:
+                decoded = json.loads(cleaned_cmd)
+                if isinstance(decoded, str):
+                    cmd = decoded
+            except (json.JSONDecodeError, ValueError):
+                pass
+            if cmd == cleaned_cmd:
+                try:
+                    decoded = json.loads(cleaned_cmd.replace(r"\'", "'"))
+                    if isinstance(decoded, str):
+                        cmd = decoded
+                except (json.JSONDecodeError, ValueError):
+                    pass
+        elif cleaned_cmd.startswith("'") and cleaned_cmd.endswith("'"):
+            cmd = cleaned_cmd[1:-1]
+
     # Tier 3: Never auto-allow dangerous/remote commands (force_ask overrides always-proceed)
     if is_dangerous_command(cmd):
         return {
@@ -772,6 +972,19 @@ def run_tests() -> int:
         'node /path/to/home/.gemini/jetski/brain/00000000-0000-0000-0000-000000000000/scratch/accept_race_probe.js 3000',
         "grep -n '^\\(### Task\\|- \\[ \\]\\|- \\[x\\]\\)' /path/to/project/docs/plans/presubmit-fixes.md | sed -n '1,120p'; echo \"=== REMAINING UNCHECKED ===\"; grep -c '^- \\[ \\]' /path/to/project/docs/plans/presubmit-fixes.md",
         '/path/to/home/.gemini/config/skills/revmux/scripts/launch-revmux.sh --task autonomous-exec-guard --run 01-initial --profile agy-only > /tmp/revmux-autonomous-exec-guard-01-initial.json 2> /tmp/revmux-autonomous-exec-guard-01-initial.log',
+        'echo "=== Project-level SKILL.md sizes ===" && wc -c plugins/*/skills/*/SKILL.md .agent/skills/*/SKILL.md 2>/dev/null && echo && echo "=== User-level SKILL.md sizes ===" && wc -c ~/.gemini/config/plugins/*/skills/*/SKILL.md ~/.gemini/config/skills/*/SKILL.md 2>/dev/null && echo && echo "=== Total skills count ===" && (ls plugins/*/skills/*/SKILL.md .agent/skills/*/SKILL.md ~/.gemini/config/plugins/*/skills/*/SKILL.md ~/.gemini/config/skills/*/SKILL.md 2>/dev/null | wc -l) && echo && echo "=== AGENTS.md + GEMINI.md sizes ===" && wc -c AGENTS.md GEMINI.md 2>/dev/null && echo && echo "=== Hooks ===" && find plugins/ -name \'hooks.json\' -exec wc -c {} + 2>/dev/null && echo && echo "=== Rules files ===" && find . -name \'*.md\' -path \'*/.agents/*\' -exec wc -c {} + 2>/dev/null',
+        "(ls -la)",
+        "(ls -la | wc -l)",
+        "find . -name '*.py' -exec wc -l {} +",
+        "find plugins/ -name 'hooks.json' -exec wc -c {} +",
+        "fd -x wc -l {}",
+        "bash ~/.gemini/config/plugins/planning/skills/exec/scripts/detect-vcs.sh",
+        "vcs=$(bash ~/.gemini/config/plugins/planning/skills/exec/scripts/detect-vcs.sh)",
+        "bash ~/.gemini/config/skills/my-custom-skill/scripts/custom.sh",
+        ".agents/skills/my-skill/scripts/run.sh",
+        "mkdir -p ~/.gemini/config/plugins_data/cc-thingz/skill-bench",
+        'head -5 /Users/artem/.gemini/antigravity-cli/brain/e64bd7ab-e8b5-4714-9578-0353bb5d9f4c/.system_generated/logs/transcript.jsonl | python3 -c "import sys,json; [print(json.dumps({k:v for k,v in json.loads(l).items() if k!=\'content\' and k!=\'thinking\'}, indent=2)) for l in sys.stdin]" 2>/dev/null | head -80',
+        r'"head -5 /Users/artem/.gemini/antigravity-cli/brain/e64bd7ab-e8b5-4714-9578-0353bb5d9f4c/.system_generated/logs/transcript.jsonl | python3 -c \"import sys,json; [print(json.dumps({k:v for k,v in json.loads(l).items() if k!=\'content\' and k!=\'thinking\'}, indent=2)) for l in sys.stdin]\" 2>/dev/null | head -80"',
     ]
 
     for idx, cmd in enumerate(user_commands, 1):
