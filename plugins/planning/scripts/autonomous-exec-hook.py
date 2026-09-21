@@ -23,6 +23,8 @@ Provides three-tier permission filtering for `run_command` and file tools:
      `curl | bash`, or other destructive system commands.
 """
 
+from __future__ import annotations
+
 import glob
 import json
 import os
