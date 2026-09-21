@@ -129,7 +129,7 @@ Build a Python script that:
 
 5. **Embedded tests** (`--test`): Create mock transcript.jsonl files with known metrics, verify extraction accuracy.
 
-- [ ] complete
+- [x] complete
 
 ---
 
