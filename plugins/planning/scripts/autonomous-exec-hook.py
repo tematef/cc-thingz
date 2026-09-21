@@ -4,15 +4,18 @@
 Provides three-tier permission filtering for `run_command` and file tools:
 1. Tier 1 (Always Allowed - Interactive & Autonomous):
    - Non-dangerous inspection, search, text-processing, and diagnostic commands
-     (`ls`, `cat`, `find` without `-delete`/`-exec`, `grep`, `sed` without `-i`/`--in-place`,
+     (`ls`, `cat`, `find` without `-delete` or with safe `-exec`/`-execdir`, `fd` without
+     destructive flags or with safe `-x`/`--exec`, `grep`, `sed` without `-i`/`--in-place`,
      `awk` without `-i inplace`, `du`, `head`, `tail`, `sort`, `cut`, `wc`, `jq`, `echo`,
      `printf`, read-only `node -e` / `python3 -c`, read-only `git` / `hg` subcommands),
-     evaluated per segment across pipelines (`|`), `;`, `&&`, `||`, `&`, and newlines.
+     evaluated per segment across pipelines (`|`), `;`, `&&`, `||`, `&`, command substitutions
+     `$(...)`, and newlines.
    - Output redirects (`>`, `>>`) and file operations targeting `/tmp/<file>`, `.worktrees/`,
-     or `.gemini/jetski/brain/.../scratch/`.
+     `~/.gemini/config/plugins_data/`, or `.gemini/{antigravity-cli,antigravity,jetski}/brain/.../scratch/`.
    - Project test runners, linters, and typecheckers (`npx jest`, `npx eslint`, `npm test`,
      `cargo test`, `go test`, `pytest`, etc.).
-   - Anchored `cc-thingz` / `revmux` plugin helper scripts under `plugins/` or `.gemini/config/`.
+   - Anchored `cc-thingz` / `revmux` plugin helper scripts under `plugins/`, `.gemini/config/`,
+     `.agent/`, or `.agents/`.
 2. Tier 2 (Autonomous Mode - Subagents & Active `/exec` Runs):
    - Automatically approves in-place file edits (`perl -0pi -e`, `sed -i`), local git
      mutations (`git add`, `git commit`, `git checkout`, `git branch`, `git rebase`,
@@ -161,7 +164,7 @@ def is_anchored_plugin_script(script_token: str) -> bool:
         return True
     return bool(
         re.search(
-            r"(?:^|/)(?:plugins/[^/\s]+/(?:skills/[^/\s]+/)?scripts|\.gemini/config/(?:skills|plugins)/[^/\s]+/(?:skills/[^/\s]+/)?scripts|\.agents/(?:skills/[^/\s]+/)?scripts)/[^/\s]+$",
+            r"(?:^|/)(?:plugins/[^/\s]+/(?:skills/[^/\s]+/)?scripts|\.gemini/config/(?:skills|plugins)/[^/\s]+/(?:skills/[^/\s]+/)?scripts|\.agent(?:s)?/(?:skills/[^/\s]+/)?scripts)/[^/\s]+$",
             cleaned,
         )
     )
@@ -336,33 +339,41 @@ def is_safe_git_or_hg(tokens: list[str]) -> bool:
     return False
 
 
+class ShellQuoteTracker:
+    """Tracks quote and escape state while scanning shell commands character-by-character."""
+
+    def __init__(self) -> None:
+        self.in_single = False
+        self.in_double = False
+        self.escaped = False
+
+    def feed(self, ch: str) -> bool:
+        """Feed a character; returns True if inside quotes or escaped, False otherwise."""
+        if self.escaped:
+            self.escaped = False
+            return True
+        if ch == "\\" and not self.in_single:
+            self.escaped = True
+            return True
+        if ch == "'" and not self.in_double:
+            self.in_single = not self.in_single
+            return True
+        if ch == '"' and not self.in_single:
+            self.in_double = not self.in_double
+            return True
+        return self.in_single or self.in_double
+
+
 def strip_unquoted_parens(s: str) -> str:
     """Replace unquoted, unescaped parentheses with spaces so grouping subshells can be tokenized safely."""
+    tracker = ShellQuoteTracker()
     out = []
-    in_single = False
-    in_double = False
-    escaped = False
     for ch in s:
-        if escaped:
-            out.append(ch)
-            escaped = False
-            continue
-        if ch == "\\" and not in_single:
-            escaped = True
-            out.append(ch)
-            continue
-        if ch == "'" and not in_double:
-            in_single = not in_double
-            out.append(ch)
-            continue
-        if ch == '"' and not in_single:
-            in_double = not in_double
-            out.append(ch)
-            continue
-        if not in_single and not in_double and ch in ("(", ")"):
+        is_quoted = tracker.feed(ch)
+        if not is_quoted and ch in ("(", ")"):
             out.append(" ")
-            continue
-        out.append(ch)
+        else:
+            out.append(ch)
     return "".join(out)
 
 
@@ -502,7 +513,12 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
                     if end_t in (";", "\\;"):
                         break
                     end_idx += 1
-                exec_cmd_tokens = [
+                cmd_prefix = []
+                if t.startswith("--exec="):
+                    inner_cmd = t[len("--exec=") :].strip("\"'")
+                    if inner_cmd:
+                        cmd_prefix = [inner_cmd]
+                exec_cmd_tokens = cmd_prefix + [
                     tok for tok in tokens[idx + 1 : end_idx]
                     if tok.strip("\"'") != "{}"
                 ]
@@ -625,64 +641,19 @@ def extract_command_substitutions(cmd: str) -> tuple[list[str] | None, str]:
     out = []
     i = 0
     n = len(cmd)
-    in_single = False
-    in_double = False
-    escaped = False
+    tracker = ShellQuoteTracker()
 
     while i < n:
         ch = cmd[i]
-        if escaped:
-            out.append(ch)
-            escaped = False
-            i += 1
-            continue
-        if ch == "\\" and not in_single:
-            escaped = True
-            out.append(ch)
-            i += 1
-            continue
-        if ch == "'" and not in_double:
-            in_single = not in_single
-            out.append(ch)
-            i += 1
-            continue
-        if ch == '"' and not in_single:
-            in_double = not in_double
-            out.append(ch)
-            i += 1
-            continue
-
-        if not in_single and ch == "$" and i + 1 < n and cmd[i + 1] == "(":
-            # Found start of $(...)
+        if not tracker.in_single and not tracker.escaped and ch == "$" and i + 1 < n and cmd[i + 1] == "(":
             depth = 1
             j = i + 2
             sub_inner = []
-            sub_in_single = False
-            sub_in_double = False
-            sub_escaped = False
+            sub_tracker = ShellQuoteTracker()
             while j < n and depth > 0:
                 sub_ch = cmd[j]
-                if sub_escaped:
-                    sub_inner.append(sub_ch)
-                    sub_escaped = False
-                    j += 1
-                    continue
-                if sub_ch == "\\" and not sub_in_single:
-                    sub_escaped = True
-                    sub_inner.append(sub_ch)
-                    j += 1
-                    continue
-                if sub_ch == "'" and not sub_in_double:
-                    sub_in_single = not in_single
-                    sub_inner.append(sub_ch)
-                    j += 1
-                    continue
-                if sub_ch == '"' and not sub_in_single:
-                    sub_in_double = not in_double
-                    sub_inner.append(sub_ch)
-                    j += 1
-                    continue
-                if not sub_in_single and not sub_in_double:
+                is_quoted = sub_tracker.feed(sub_ch)
+                if not is_quoted:
                     if sub_ch == "(":
                         depth += 1
                     elif sub_ch == ")":
@@ -698,6 +669,7 @@ def extract_command_substitutions(cmd: str) -> tuple[list[str] | None, str]:
             i = j + 1
             continue
 
+        tracker.feed(ch)
         out.append(ch)
         i += 1
 
@@ -858,12 +830,24 @@ def is_subagent_or_autonomous_active(payload: dict, cmd: str) -> bool:
 def allow_response(allow_writes: bool = False) -> dict:
     """Return an allow decision with scoped permissionOverrides."""
     overrides = [
+        "run_command(*)",
+        "bash(*)",
         "command(*)",
         "unsandboxed(*)",
+        "view_file(*)",
+        "list_dir(*)",
+        "grep_search(*)",
+        "find_by_name(*)",
+        "read_url_content(*)",
+        "search_web(*)",
         "read_file(*)",
     ]
     if allow_writes:
-        overrides.append("write_file(*)")
+        overrides.extend([
+            "write_to_file(*)",
+            "replace_file_content(*)",
+            "write_file(*)",
+        ])
     return {
         "decision": "allow",
         "permissionOverrides": overrides,
@@ -873,6 +857,32 @@ def allow_response(allow_writes: bool = False) -> dict:
 def ask_response() -> dict:
     """Return the required PreToolUse 'ask' decision so Jetski falls back to normal permission handling."""
     return {"decision": "ask"}
+
+
+def unwrap_outer_quotes(cmd: str) -> str:
+    """Unwrap outer quotes if command is passed as an enclosed string literal."""
+    cleaned = cmd.strip()
+    if len(cleaned) < 2:
+        return cmd
+    if cleaned.startswith("'") and cleaned.endswith("'"):
+        inner = cleaned[1:-1]
+        if "'" not in inner:
+            return inner
+    elif cleaned.startswith('"') and cleaned.endswith('"'):
+        inner = cleaned[1:-1]
+        escaped = False
+        has_unescaped = False
+        for ch in inner:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                has_unescaped = True
+                break
+        if not has_unescaped:
+            return re.sub(r'\\(["\\])', r'\1', inner)
+    return cmd
 
 
 def evaluate_hook(payload: dict) -> dict:
@@ -905,27 +915,8 @@ def evaluate_hook(payload: dict) -> dict:
     if not cmd:
         return ask_response()
 
-    # Unwrap double-encoded JSON string or quoted command if emitted with outer quotes
-    cleaned_cmd = cmd.strip()
-    if (cleaned_cmd.startswith('"') and cleaned_cmd.endswith('"')) or (
-        cleaned_cmd.startswith("'") and cleaned_cmd.endswith("'")
-    ):
-        if cleaned_cmd.startswith('"'):
-            try:
-                decoded = json.loads(cleaned_cmd)
-                if isinstance(decoded, str):
-                    cmd = decoded
-            except (json.JSONDecodeError, ValueError):
-                pass
-            if cmd == cleaned_cmd:
-                try:
-                    decoded = json.loads(cleaned_cmd.replace(r"\'", "'"))
-                    if isinstance(decoded, str):
-                        cmd = decoded
-                except (json.JSONDecodeError, ValueError):
-                    pass
-        elif cleaned_cmd.startswith("'") and cleaned_cmd.endswith("'"):
-            cmd = cleaned_cmd[1:-1]
+    # Unwrap outer quotes if command is wrapped in enclosing quotes
+    cmd = unwrap_outer_quotes(cmd)
 
     # Tier 3: Never auto-allow dangerous/remote commands (force_ask overrides always-proceed)
     if is_dangerous_command(cmd):
@@ -985,6 +976,10 @@ def run_tests() -> int:
         "mkdir -p ~/.gemini/config/plugins_data/cc-thingz/skill-bench",
         'head -5 /Users/artem/.gemini/antigravity-cli/brain/e64bd7ab-e8b5-4714-9578-0353bb5d9f4c/.system_generated/logs/transcript.jsonl | python3 -c "import sys,json; [print(json.dumps({k:v for k,v in json.loads(l).items() if k!=\'content\' and k!=\'thinking\'}, indent=2)) for l in sys.stdin]" 2>/dev/null | head -80',
         r'"head -5 /Users/artem/.gemini/antigravity-cli/brain/e64bd7ab-e8b5-4714-9578-0353bb5d9f4c/.system_generated/logs/transcript.jsonl | python3 -c \"import sys,json; [print(json.dumps({k:v for k,v in json.loads(l).items() if k!=\'content\' and k!=\'thinking\'}, indent=2)) for l in sys.stdin]\" 2>/dev/null | head -80"',
+        "fd --exec=wc -l {}",
+        "echo $(echo 'hello')",
+        ".agent/skills/cc-thingz-sync/scripts/sync.sh",
+        "echo 'hello' 'world'",
     ]
 
     for idx, cmd in enumerate(user_commands, 1):
@@ -992,6 +987,12 @@ def run_tests() -> int:
         assert res.get("decision") == "allow", (
             f"Failed Tier 1 auto-allow on user command #{idx}: {cmd}\nGot: {res}"
         )
+
+    # Unit tests for unwrap_outer_quotes
+    assert unwrap_outer_quotes("'foo' 'bar'") == "'foo' 'bar'"
+    assert unwrap_outer_quotes("'foo bar'") == "foo bar"
+    assert unwrap_outer_quotes('"foo" "bar"') == '"foo" "bar"'
+    assert unwrap_outer_quotes(r'"echo \"hello\""') == 'echo "hello"'
 
     # Verify read-only commands do NOT receive write_file(*) override
     ro_res = evaluate_hook({"toolCall": {"name": "run_command", "args": {"CommandLine": "ls -la"}}})
@@ -1011,6 +1012,7 @@ def run_tests() -> int:
         "cat <(rm -rf src)",
         "case 1 in *) rm -rf src ;; esac",
         "fd -x rm -rf {}",
+        "fd --exec=rm -rf {}",
         "echo x | tee ~/.zshrc",
         "find . -delete",
         "find . -exec rm {} +",
