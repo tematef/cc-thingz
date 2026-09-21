@@ -8,3 +8,10 @@
 
 # macOS
 .DS_Store
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Local disabled skills
+**/.disabled_skills/

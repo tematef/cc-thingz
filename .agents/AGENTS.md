@@ -27,7 +27,7 @@ When contributing to this repository, you must adhere to the following rules:
    For a comprehensive architectural breakdown of the tool suite, available plugins, and workflow capabilities, see [.agents/CONTEXT.md](file:///Users/artem/projects/cc-thingz/.agents/CONTEXT.md).
 
 5. **Upstream Synchronization:**
-   To synchronize this fork with upstream updates from `umputun/cc-thingz`, use the `cc-thingz-sync` skill (`plugins/workflow/skills/sync/SKILL.md`). Always ensure our AGY/Jetski adaptations are preserved during rebase conflicts.
+   To synchronize this fork with upstream updates from `umputun/cc-thingz`, use the `cc-thingz-sync` skill (`.agent/skills/cc-thingz-sync/SKILL.md`). Always ensure our AGY/Jetski adaptations are preserved during rebase conflicts and discard excluded upstream skills.
 
 6. **Subagent Orchestration Constraints:**
    - Subagents do not have `invoke_subagent` tool access (no recursive nesting).
@@ -47,4 +47,9 @@ When contributing to this repository, you must adhere to the following rules:
    - This repository does not use GitHub Actions or remote CI workflows (`.github/workflows/` must remain deleted).
    - All linting, tests, and verifications are executed locally on demand.
    - When synchronizing with upstream using `cc-thingz-sync`, discard any incoming `.github/workflows/` files.
+
+10. **Excluded Upstream Plugins & Skills (Never Re-import on Sync):**
+    - `plugins/release-tools/` (`last-tag`, `new`), `plugins/review/skills/git-review/`, `plugins/review/skills/pr/`, and `tests/test-release-tools.sh` are intentionally removed from this fork (`revmux` supersedes `git-review` and `pr`).
+    - When synchronizing with `umputun/cc-thingz`, always discard (`git rm -rf --ignore-unmatch`) any incoming files under `plugins/release-tools/`, `plugins/review/skills/git-review/`, `plugins/review/skills/pr/`, and `tests/test-release-tools.sh`.
+
 
