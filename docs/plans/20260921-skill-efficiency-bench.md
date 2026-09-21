@@ -220,4 +220,4 @@ Write documentation covering:
 
 Run `skill-audit.py` against the current project and user setup to produce the first audit report. Save the report to `reports/audit-20260921.md`. Review findings and note actionable items (duplicates to remove, heavy skills to trim).
 
-- [ ] complete
+- [x] complete
