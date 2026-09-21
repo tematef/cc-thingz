@@ -798,7 +798,7 @@ def is_subagent_or_autonomous_active(payload: dict, cmd: str) -> bool:
                 return False
 
         subagent_creation_re = re.compile(
-            r'Created the following subagents:[^\n]*?"conversationId":\s*\\?"'
+            r'Created the following subagents:[\s\S]*?\\?"conversationId\\?":\s*\\?"'
             + re.escape(conv_id)
             + r'\\?"'
         )
