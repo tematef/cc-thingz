@@ -832,6 +832,7 @@ def allow_response(allow_writes: bool = False) -> dict:
     overrides = [
         "run_command(*)",
         "bash(*)",
+        "Bash(*)",
         "command(*)",
         "unsandboxed(*)",
         "view_file(*)",
@@ -841,12 +842,15 @@ def allow_response(allow_writes: bool = False) -> dict:
         "read_url_content(*)",
         "search_web(*)",
         "read_file(*)",
+        "Read(*)",
     ]
     if allow_writes:
         overrides.extend([
             "write_to_file(*)",
             "replace_file_content(*)",
             "write_file(*)",
+            "Write(*)",
+            "Edit(*)",
         ])
     return {
         "decision": "allow",
