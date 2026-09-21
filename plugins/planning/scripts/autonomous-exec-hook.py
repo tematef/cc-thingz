@@ -439,6 +439,18 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
             else:
                 tokens = tokens[1:]
 
+    # Strip leading `timeout` utility and its arguments
+    while tokens and os.path.basename(tokens[0].strip("\"'")) == "timeout":
+        tokens = tokens[1:]
+        while tokens and tokens[0].strip("\"'").startswith("-"):
+            t = tokens[0].strip("\"'")
+            if t in ("-k", "--kill-after", "-s", "--signal") and len(tokens) >= 2:
+                tokens = tokens[2:]
+            else:
+                tokens = tokens[1:]
+        if tokens:
+            tokens = tokens[1:] # strip duration
+
     if not tokens:
         return True, redir_writes
 
@@ -984,6 +996,7 @@ def run_tests() -> int:
         "echo $(echo 'hello')",
         ".agent/skills/cc-thingz-sync/scripts/sync.sh",
         "echo 'hello' 'world'",
+        "timeout 10 python3 ~/.gemini/config/plugins_data/cc-thingz/skill-bench/skill-audit.py --test",
     ]
 
     for idx, cmd in enumerate(user_commands, 1):
@@ -1136,6 +1149,13 @@ def main() -> None:
             return
         payload = json.loads(raw)
         result = evaluate_hook(payload)
+        try:
+            with open("/tmp/autonomous-hook-debug.log", "a") as dbg:
+                dbg.write(f"PAYLOAD: {json.dumps(payload)}\n")
+                dbg.write(f"DECISION: {json.dumps(result)}\n")
+                dbg.write("-" * 40 + "\n")
+        except:
+            pass
         print(json.dumps(result))
     except Exception:
         # Fail open to default Jetski ask behavior on malformed input
