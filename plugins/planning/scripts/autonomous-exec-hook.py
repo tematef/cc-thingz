@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
 """PreToolUse hook for Jetski / Antigravity (AGY) to eliminate approval prompts.
 
-Provides three-tier permission filtering for `run_command` and file tools:
+Provides three-tier permission filtering for `run_command` and agent tools:
 1. Tier 1 (Always Allowed - Interactive & Autonomous):
    - Non-dangerous inspection, search, text-processing, and diagnostic commands
-     (`ls`, `cat`, `find` without `-delete`/`-exec`, `grep`, `sed` without `-i`/`--in-place`,
-     `awk` without `-i inplace`, `du`, `head`, `tail`, `sort`, `cut`, `wc`, `jq`, `echo`,
-     `printf`, read-only `node -e` / `python3 -c`, read-only `git` / `hg` subcommands),
-     evaluated per segment across pipelines (`|`), `;`, `&&`, `||`, `&`, and newlines.
-   - Output redirects (`>`, `>>`) and file operations targeting `/tmp/<file>`, `.worktrees/`,
-     or `.gemini/jetski/brain/.../scratch/`.
-   - Project test runners, linters, and typecheckers (`npx jest`, `npx eslint`, `npm test`,
-     `cargo test`, `go test`, `pytest`, etc.).
-   - Anchored `cc-thingz` / `revmux` plugin helper scripts under `plugins/` or `.gemini/config/`.
-2. Tier 2 (Autonomous Mode - Subagents & Active `/exec` Runs):
-   - Automatically approves in-place file edits (`perl -0pi -e`, `sed -i`), local git
-     mutations (`git add`, `git commit`, `git checkout`, `git branch`, `git rebase`,
-     `git worktree`), and build commands inside the active workspace or `.worktrees/`.
+     (`ls`, `cat`, `find` without `-delete`/`-exec`, `fd` without `-x`/`--exec`, `grep`,
+     `sed` without `-i`/`--in-place`, `awk` without `-i inplace`, `du`, `head`, `tail`,
+     `sort`, `cut`, `wc`, `jq`, `echo`, `printf`, `javap`, `jar`, `dig`, `curl`,
+     `gcloud auth/storage/clusters`, `kubectl get/describe/logs`, `./gradlew`,
+     read-only `node -e`/`-p` and `python3 -c`/heredocs, local `git`/`hg` commands),
+     evaluated per segment across pipelines (`|`), `;`, `&&`, `||`, `&`, subshells,
+     and recursively validated `$(...)` command substitutions.
+   - Non-shell read/orchestration tools (`view_file`, `list_dir`, `grep_search`,
+     `find_by_name`, `manage_task`, `schedule`, `send_message`, `invoke_subagent`,
+     `call_mcp_tool`, etc.).
+   - File writes (`write_to_file`, `replace_file_content`, `notebook_edit`) inside
+     the enclosing Git/Hg workspace root, `/tmp/*`, `.worktrees/`, or `brain/.../scratch/`.
+2. Tier 2 (Autonomous Mode - All Subagents & Active `/exec` Runs):
+   - Deterministically detects subagents via `agentapi get-conversation-metadata <convId>`
+     (`nestingDepth >= 1` or `parentConversationId != ""` or `subagentSpec != null`),
+     cached in `/tmp/cc-thingz-subagent-cache.json`, with a full-file parent transcript
+     fallback scan.
+   - Automatically approves ALL subagent and `/exec` tool calls and commands (`perl -0pi -e`,
+     `sed -i`, `rm -f <workspace-file>`, build/test commands, file edits) except Tier 3.
 3. Tier 3 (Hard Safety Blocklist - Never Auto-Allowed):
    - Never auto-allows `git push` (with any global flags), `hg push`, `sudo`/`su`/`doas`
      (including multiline or subshell), `rm -rf /` or `rm -fr /` or `rm -r -f ~`,
@@ -29,14 +35,17 @@ import glob
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 import time
 
 DEFAULT_AUTONOMOUS_MARKER = os.path.expanduser(
     "~/.gemini/config/plugins_data/cc-thingz/autonomous-active"
 )
-PROGRESS_GLOB = "/tmp/progress-*.txt"
-ACTIVE_WINDOW_SECONDS = 2 * 3600  # 2 hours
+SUBAGENT_CACHE_FILE = "/tmp/cc-thingz-subagent-cache.json"
+HOOK_AUDIT_LOG = "/tmp/cc-thingz-hook-audit.jsonl"
+ACTIVE_WINDOW_SECONDS = 6 * 3600  # 6 hours
 
 # Hard blocklist: never auto-approve even during autonomous execution (compiled with MULTILINE)
 DANGEROUS_PATTERNS = [
@@ -79,42 +88,42 @@ SAFE_READ_COMMANDS = {
     "locate", "which", "whereis", "type", "file", "stat",
     "realpath", "readlink", "dirname", "basename", "pwd", "tree",
     "md5", "md5sum", "shasum", "sha1sum", "sha256sum", "cmp", "diff", "comm",
+    # JVM / network / system inspection
+    "javap", "jar", "dig", "nslookup", "host", "lsof", "ps", "pgrep", "uname",
+    "whoami", "id", "hostname", "date", "sleep", "seq", "expr", "bc", "sw_vers",
+    "gob-curl", "gsutil", "tar", "sso_client", "gcert",
     # Text processing & filtering (sed/awk/gawk checked separately for in-place flags)
     "grep", "egrep", "fgrep", "rg", "ag", "ack",
     "cut", "sort", "uniq", "tr", "column", "fmt", "fold", "nl", "od",
     "hexdump", "xxd", "strings", "jq", "yq",
     # Shell built-ins & harmless utilities
     "echo", "printf", "true", "false", "test", "[", "[[", "printenv",
-    "date", "uname", "whoami", "id", "hostname", "sleep", "seq", "expr", "bc",
-    "cd", "export", "local", "unset", "shift", "read", "fi",
+    "cd", "export", "local", "unset", "shift", "read", "set", "fi",
     "done", "esac",
     # Test runners & linters
     "jest", "eslint", "prettier", "tsc", "vitest", "pytest", "ruff",
-    "flake8", "mypy", "shellcheck", "clippy", "revmux",
+    "flake8", "mypy", "shellcheck", "clippy", "revmux", "agentapi",
 }
 
 SAFE_GIT_SUBCOMMANDS = {
     "status", "log", "diff", "show", "rev-parse", "ls-files", "remote",
     "describe", "blame", "shortlog", "reflog", "cat-file", "check-ignore",
     "for-each-ref", "name-rev", "merge-base", "rev-list", "ls-tree",
-    "symbolic-ref",
-}
-
-READ_ONLY_TOOLS = {
-    "view_file",
-    "list_dir",
-    "grep_search",
-    "find_by_name",
-    "read_url_content",
-    "search_web",
-    "list_resources",
-    "read_resource",
+    "symbolic-ref", "fetch", "branch", "checkout", "switch", "add",
+    "commit", "stash", "rebase", "reset", "worktree", "tag", "config",
+    "rm", "mv", "archive", "restore",
 }
 
 WRITE_FILE_TOOLS = {
     "write_to_file",
     "replace_file_content",
     "notebook_edit",
+}
+
+SHELL_TOOLS = {
+    "run_command",
+    "bash",
+    "execute_command",
 }
 
 
@@ -131,23 +140,75 @@ def is_dangerous_command(cmd: str) -> bool:
     return False
 
 
+def find_enclosing_vcs_root(path_str: str) -> str:
+    """Walk up from path_str to find the enclosing .git or .hg root directory, if any."""
+    try:
+        curr = os.path.realpath(os.path.expanduser(path_str))
+    except OSError:
+        return ""
+    if os.path.isfile(curr):
+        curr = os.path.dirname(curr)
+    while curr and curr != os.sep:
+        if os.path.exists(os.path.join(curr, ".git")) or os.path.exists(
+            os.path.join(curr, ".hg")
+        ):
+            return curr
+        parent = os.path.dirname(curr)
+        if parent == curr:
+            break
+        curr = parent
+    return ""
+
+
+def get_effective_workspaces(payload: dict) -> list[str]:
+    """Return normalized workspace paths expanded to include enclosing Git/Hg roots."""
+    raw_paths = list(payload.get("workspacePaths") or [])
+    marker_ws = get_active_marker_workspace()
+    if marker_ws:
+        raw_paths.append(marker_ws)
+    art_dir = payload.get("artifactDirectoryPath") or ""
+    if art_dir:
+        raw_paths.append(art_dir)
+
+    result: list[str] = []
+    seen: set[str] = set()
+    for p in raw_paths:
+        if not p:
+            continue
+        real_p = os.path.realpath(os.path.expanduser(p))
+        if real_p not in seen:
+            seen.add(real_p)
+            result.append(real_p)
+        vcs_root = find_enclosing_vcs_root(real_p)
+        if vcs_root and vcs_root not in seen:
+            seen.add(vcs_root)
+            result.append(vcs_root)
+    return result
+
+
 def is_safe_special_target(path_str: str, safe_vars: set[str] | None = None) -> bool:
-    """Return True if a single path token is inside /tmp/*, .worktrees/, or brain/.../scratch/ without .. traversal."""
+    """Return True if a single path token is inside /tmp/*, .worktrees/, build/, or brain/.../scratch/ without .. traversal."""
     cleaned = path_str.strip("\"'")
     if not cleaned or "autonomous-active" in cleaned:
         return False
-    # Reject any path containing parent-directory traversal (`..`) segments
     if ".." in cleaned.replace("\\", "/").split("/"):
         return False
-    if re.match(r"^/(?:private/)?tmp/[A-Za-z0-9_./-]+$", cleaned):
+    if re.match(r"^/(?:private/)?tmp(?:/[A-Za-z0-9_./-]*)?$", cleaned):
         return True
     if "/.worktrees/" in cleaned or cleaned.startswith(".worktrees/"):
         return True
+    if cleaned.startswith("build/") or "/build/" in cleaned:
+        return True
     if safe_vars:
         for var in safe_vars:
-            if cleaned.startswith(f"${var}/") or cleaned.startswith(f"${{{var}}}/"):
+            if (
+                cleaned == f"${var}"
+                or cleaned == f"${{{var}}}"
+                or cleaned.startswith(f"${var}/")
+                or cleaned.startswith(f"${{{var}}}/")
+            ):
                 return True
-    if re.search(r"\.gemini/jetski/brain/[^/\s]+/scratch(?:/|$)", cleaned):
+    if re.search(r"\.gemini/(?:jetski|antigravity)/brain/[^/\s]+", cleaned):
         return True
     return False
 
@@ -156,7 +217,7 @@ def is_anchored_plugin_script(script_token: str) -> bool:
     """Return True if script_token is an anchored path to a known cc-thingz or revmux script."""
     cleaned = script_token.strip("\"'")
     base = os.path.basename(cleaned)
-    if cleaned == "./install.sh" or re.match(r"^(?:\./)?tests/test-[A-Za-z0-9_.-]+\.sh$", cleaned):
+    if cleaned == "./install.sh" or re.match(r"^(?:\./)?tests/test-[A-Za-z0-9_.-]+\.(?:sh|py)$", cleaned):
         return True
     if base not in CC_THINGZ_SCRIPTS:
         return False
@@ -170,6 +231,27 @@ def is_anchored_plugin_script(script_token: str) -> bool:
     )
 
 
+def strip_heredocs(cmd: str) -> tuple[str, list[str]]:
+    """Strip heredoc bodies (<<EOF ... EOF) from cmd before line/segment splitting.
+
+    Returns (cmd_without_heredoc_bodies, list_of_heredoc_bodies).
+    """
+    bodies: list[str] = []
+    # Match << 'EOF' or <<EOF or <<-EOF followed by lines up to EOF
+    pattern = re.compile(
+        r"<<-?\s*['\"]?([A-Za-z_][A-Za-z0-9_]*)['\"]?[ \t]*([^\n]*)\n(.*?)(?:\n\1(?=[ \t;\n)|&]|$))",
+        re.DOTALL,
+    )
+
+    def _repl(m: re.Match) -> str:
+        trailing_on_first_line = m.group(2)
+        bodies.append(m.group(3))
+        return " " + trailing_on_first_line
+
+    cleaned = pattern.sub(_repl, cmd)
+    return cleaned, bodies
+
+
 def check_and_strip_redirections(
     segment: str, safe_vars: set[str] | None = None
 ) -> tuple[bool, str, bool]:
@@ -177,13 +259,10 @@ def check_and_strip_redirections(
 
     Returns (is_safe, stripped_segment, uses_special_write).
     """
-    # Strip standard safe fd redirects: 2>&1, >&2, &>/dev/null, 2>/dev/null, >/dev/null
     cleaned = re.sub(r"[0-9]*>&[0-9]+", " ", segment)
     cleaned = re.sub(r"(?:[0-9]*|&)?>>?\s*/dev/null\b", " ", cleaned)
 
     uses_special_write = False
-
-    # Find any remaining output redirection (`>` or `>>`)
     redir_pattern = re.compile(r"""(?:[0-9]+|&)?>>?\s*("[^"]*"|'[^']*'|[^\s;|&\)]+)""")
     pos = 0
     out_parts = []
@@ -201,7 +280,6 @@ def check_and_strip_redirections(
     out_parts.append(cleaned[pos:])
     stripped = "".join(out_parts)
 
-    # Reject any remaining unparsed `>` outside quotes
     unquoted = re.sub(r"'[^']*'|\"[^\"]*\"", '""', stripped)
     if re.search(r"(?<![0-9&])>>?", unquoted):
         return False, segment, False
@@ -209,10 +287,88 @@ def check_and_strip_redirections(
     return True, stripped, uses_special_write
 
 
+def resolve_and_validate_subcommands(cmd: str, depth: int = 0) -> tuple[bool, str]:
+    """Recursively validate $(...) command substitutions outside single quotes.
+
+    If every inner command is Tier 1 safe, replaces $(...) with __SAFE_SUBCMD__.
+    """
+    if depth > 4:
+        return False, cmd
+
+    out: list[str] = []
+    in_single = False
+    escaped = False
+    i = 0
+    n = len(cmd)
+
+    while i < n:
+        ch = cmd[i]
+        if escaped:
+            out.append(ch)
+            escaped = False
+            i += 1
+            continue
+        if ch == "\\" and not in_single:
+            escaped = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == "'":
+            in_single = not in_single
+            out.append(ch)
+            i += 1
+            continue
+
+        if not in_single and ch == "$" and i + 1 < n and cmd[i + 1] == "(":
+            # Skip arithmetic expansion $(( ... ))
+            if i + 2 < n and cmd[i + 2] == "(":
+                close_idx = cmd.find("))", i + 3)
+                if close_idx != -1:
+                    out.append("0")
+                    i = close_idx + 2
+                    continue
+            # Find matching closing ')'
+            paren_depth = 1
+            j = i + 2
+            sub_single = False
+            sub_double = False
+            sub_esc = False
+            while j < n and paren_depth > 0:
+                c = cmd[j]
+                if sub_esc:
+                    sub_esc = False
+                elif c == "\\" and not sub_single:
+                    sub_esc = True
+                elif c == "'" and not sub_double:
+                    sub_single = not sub_single
+                elif c == '"' and not sub_single:
+                    sub_double = not sub_double
+                elif not sub_single and not sub_double:
+                    if c == "(":
+                        paren_depth += 1
+                    elif c == ")":
+                        paren_depth -= 1
+                j += 1
+            if paren_depth != 0:
+                return False, cmd
+            inner_cmd = cmd[i + 2 : j - 1]
+            inner_ok, _ = evaluate_tier1_command(inner_cmd, depth + 1)
+            if not inner_ok:
+                return False, cmd
+            out.append("/tmp/__safe_subcmd__")
+            i = j
+            continue
+
+        out.append(ch)
+        i += 1
+
+    return True, "".join(out)
+
+
 def split_command_segments(cmd: str) -> list[str] | None:
     """Split compound command on ;, |, ||, &&, &, and newlines outside quotes.
 
-    Returns None if the command contains unverified command substitutions (`$(...)` or backticks).
+    Returns None if the command contains unverified backticks or process substitutions.
     """
     segments: list[str] = []
     current: list[str] = []
@@ -246,30 +402,24 @@ def split_command_segments(cmd: str) -> list[str] | None:
             continue
 
         if not in_single:
-            # Reject backtick command substitution in Tier 1
             if ch == "`":
                 return None
-            # Reject $(...) command substitution in Tier 1
             if ch == "$" and i + 1 < n and cmd[i + 1] == "(":
                 return None
 
         if not in_single and not in_double:
-            # Reject <(...) and >(...) process substitutions in Tier 1
             if ch in ("<", ">") and i + 1 < n and cmd[i + 1] == "(":
                 return None
-            # Check two-char operators: ||, &&
             if i + 1 < n and cmd[i : i + 2] in ("||", "&&"):
                 segments.append("".join(current))
                 current = []
                 i += 2
                 continue
-            # Check single-char separators: ;, |, \n
             if ch in (";", "|", "\n"):
                 segments.append("".join(current))
                 current = []
                 i += 1
                 continue
-            # Check single `&` (background operator), ignoring fd redirects like 2>&1, >&2, &>
             if ch == "&":
                 prev_ch = cmd[i - 1] if i > 0 else ""
                 next_ch = cmd[i + 1] if i + 1 < n else ""
@@ -288,7 +438,7 @@ def split_command_segments(cmd: str) -> list[str] | None:
 
 
 def is_safe_git_or_hg(tokens: list[str]) -> bool:
-    """Check if a git or hg command is read-only."""
+    """Check if a git or hg command is safe (any local operation except push)."""
     if not tokens:
         return False
     prog = os.path.basename(tokens[0])
@@ -308,48 +458,45 @@ def is_safe_git_or_hg(tokens: list[str]) -> bool:
     if idx >= len(tokens):
         return True
     subcmd = tokens[idx]
-    rest = tokens[idx + 1 :]
+
+    if subcmd == "push":
+        return False
 
     if prog == "git":
-        if subcmd in SAFE_GIT_SUBCOMMANDS:
-            return True
-        if subcmd == "branch":
-            write_flags = {"-m", "-M", "-d", "-D", "-c", "-C", "--move", "--delete", "--copy"}
-            if not any(t in write_flags for t in rest) and (
-                not rest or all(t.startswith("-") for t in rest)
-            ):
-                return True
-        if subcmd == "tag":
-            if not rest or any(t in ("-l", "--list", "-v", "--verify") for t in rest):
-                return True
-        if subcmd == "worktree" and rest and rest[0] == "list":
-            return True
-        if subcmd == "stash" and rest and rest[0] in ("list", "show"):
-            return True
-        if subcmd == "config" and any(t in ("--get", "--get-all", "--list", "-l") for t in rest):
-            return True
-        return False
+        return subcmd in SAFE_GIT_SUBCOMMANDS
 
     if prog == "hg":
         return subcmd in {
             "status", "st", "log", "history", "diff", "branch",
             "branches", "root", "id", "identify", "paths", "locate",
+            "add", "commit", "update", "up", "pull",
         }
 
     return False
 
 
-def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bool, bool]:
+def is_safe_segment(
+    segment: str,
+    safe_vars: set[str] | None = None,
+    heredoc_bodies: list[str] | None = None,
+) -> tuple[bool, bool]:
     """Evaluate a single pipeline/command segment for Tier 1 safety.
 
     Returns (is_safe, needs_write_override).
     """
     seg = segment.strip()
+    # Strip surrounding subshell parentheses `( ... )`
+    while seg.startswith("(") or seg.endswith(")"):
+        seg = seg.lstrip("(").rstrip(")").strip()
+
     if not seg or seg.startswith("#"):
         return True, False
 
-    # Strip leading shell keywords (`if`, `then`, `elif`, `else`, `while`, `until`, `do`, `!`)
+    # Strip leading shell keywords (`if`, `then`, `elif`, `else`, `while`, `until`, `do`, `!`, `for ... in ...`)
     while True:
+        m_for = re.match(r"^for\s+[A-Za-z_][A-Za-z0-9_]*\s+in\b(.*)$", seg, re.DOTALL)
+        if m_for:
+            return True, False
         m = re.match(r"^(?:(?:if|then|elif|else|while|until|do)\b|!)\s*(.*)", seg, re.DOTALL)
         if m:
             seg = m.group(1).strip()
@@ -362,6 +509,9 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
     redir_ok, seg, redir_writes = check_and_strip_redirections(seg, safe_vars)
     if not redir_ok:
         return False, False
+
+    # Strip leading `export` keyword if followed by VAR=VALUE
+    seg = re.sub(r"^export\s+(?=[A-Za-z_][A-Za-z0-9_]*=)", "", seg)
 
     # Strip leading VAR=VALUE assignments and record any safe special-path variables
     while True:
@@ -411,6 +561,10 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
     if is_anchored_plugin_script(first_tok):
         return True, True
 
+    # Gradle wrapper (`./gradlew` / `gradle`)
+    if cmd_name in ("gradlew", "gradle"):
+        return True, True
+
     # Block in-place sed / awk in Tier 1 interactive mode
     if cmd_name == "sed":
         for t in [tok.strip("\"'") for tok in tokens[1:]]:
@@ -443,6 +597,41 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
                 return False, False
         return True, redir_writes
 
+    if cmd_name == "curl":
+        # Safe in Tier 1 unless writing to an unsafe file via -o / --output
+        cleaned_toks = [tok.strip("\"'") for tok in tokens[1:]]
+        for idx, t in enumerate(cleaned_toks):
+            if t in ("-o", "--output") and idx + 1 < len(cleaned_toks):
+                if not is_safe_special_target(cleaned_toks[idx + 1], safe_vars):
+                    return False, False
+        return True, redir_writes
+
+    if cmd_name == "gcloud":
+        cleaned_toks = [tok.strip("\"'") for tok in tokens[1:]]
+        if any(
+            sub in cleaned_toks
+            for sub in (
+                "print-access-token",
+                "print-identity-token",
+                "get-credentials",
+                "describe",
+                "list",
+                "ls",
+                "cp",
+                "info",
+            )
+        ):
+            return True, True
+        return False, False
+
+    if cmd_name == "kubectl":
+        cleaned_toks = [tok.strip("\"'") for tok in tokens[1:] if not tok.strip("\"'").startswith("-")]
+        if cleaned_toks and cleaned_toks[0] in (
+            "get", "describe", "logs", "top", "version", "cluster-info", "config", "explain", "api-resources",
+        ):
+            return True, redir_writes
+        return False, False
+
     if cmd_name == "tee":
         file_args = [tok.strip("\"'") for tok in tokens[1:] if not tok.strip("\"'").startswith("-")]
         if file_args and all(is_safe_special_target(f, safe_vars) for f in file_args):
@@ -462,34 +651,39 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
         if idx >= len(tokens):
             return True, redir_writes
         sub_seg = " ".join(tokens[idx:])
-        sub_ok, sub_writes = is_safe_segment(sub_seg, safe_vars)
+        sub_ok, sub_writes = is_safe_segment(sub_seg, safe_vars, heredoc_bodies)
         return sub_ok, (redir_writes or sub_writes)
 
-    if cmd_name in ("mkdir", "touch", "cp", "mv", "rm", "chmod"):
+    if cmd_name in ("mkdir", "rmdir", "touch", "cp", "mv", "rm", "chmod"):
         path_args = [tok.strip("\"'") for tok in tokens[1:] if not tok.strip("\"'").startswith("-")]
         if path_args and all(is_safe_special_target(p, safe_vars) for p in path_args):
             return True, True
         return False, False
 
     if cmd_name in ("git", "hg"):
-        return is_safe_git_or_hg([t.strip("\"'") for t in tokens]), redir_writes
+        return is_safe_git_or_hg([t.strip("\"'") for t in tokens]), True
 
     if cmd_name == "npx":
         if len(tokens) >= 2:
             sub = tokens[1].strip("\"'")
             if sub in ("jest", "eslint", "prettier", "tsc", "vitest", "cypress", "playwright"):
-                return True, redir_writes
+                return True, True
         return False, False
 
     if cmd_name in ("npm", "yarn", "pnpm"):
-        if len(tokens) >= 2:
-            sub = tokens[1].strip("\"'")
-            if sub in ("test", "t", "tst", "list", "ls", "outdated", "why", "explain", "info", "view"):
-                return True, redir_writes
-            if sub == "run" and len(tokens) >= 3:
-                script_target = tokens[2].strip("\"'")
-                if re.match(r"^(?:test|lint|compile|check|typecheck|prettier|build|format:check)", script_target):
-                    return True, redir_writes
+        idx = 1
+        while idx < len(tokens):
+            t = tokens[idx].strip("\"'")
+            if t in ("--prefix", "-C", "--cwd", "--workspace", "-w"):
+                idx += 2
+            elif t.startswith("-"):
+                idx += 1
+            else:
+                break
+        if idx < len(tokens):
+            sub = tokens[idx].strip("\"'")
+            if sub in ("test", "t", "tst", "list", "ls", "outdated", "why", "explain", "info", "view", "run"):
+                return True, True
         return False, False
 
     if cmd_name == "cargo":
@@ -503,10 +697,15 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
     if cmd_name == "node":
         if len(tokens) >= 2:
             arg1 = tokens[1].strip("\"'")
-            if is_safe_special_target(arg1, safe_vars):
-                return True, True
-            if arg1 == "-e":
-                code = " ".join(tokens[2:])
+            if is_safe_special_target(arg1, safe_vars) or arg1.endswith(".js"):
+                code = " ".join(tokens[1:])
+                if not re.search(
+                    r"(?:writeFile|appendFile|unlink|rmSync|rmdir|child_process|exec|spawn|fork|createWriteStream|fs\.open)",
+                    code,
+                ):
+                    return True, True
+            if arg1 in ("-e", "-p", "--eval", "--print", "-"):
+                code = " ".join(tokens[2:]) + " " + " ".join(heredoc_bodies or [])
                 if not re.search(
                     r"(?:writeFile|appendFile|unlink|rmSync|rmdir|child_process|exec|spawn|fork|createWriteStream|fs\.open)",
                     code,
@@ -523,8 +722,8 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
                 "plugins/" in arg1 or ".github/" in arg1
             ):
                 return True, redir_writes
-            if arg1 == "-c":
-                code = " ".join(tokens[2:])
+            if arg1 in ("-c", "-"):
+                code = " ".join(tokens[2:]) + " " + " ".join(heredoc_bodies or [])
                 if not re.search(
                     r"(?:os\.system|subprocess|Popen|check_output|rmtree|shutil|unlink|remove|write_text|write_bytes|open\s*\([^)]*['\"][wa+])",
                     code,
@@ -540,12 +739,17 @@ def is_safe_segment(segment: str, safe_vars: set[str] | None = None) -> tuple[bo
     return (cmd_name in SAFE_READ_COMMANDS), redir_writes
 
 
-def evaluate_tier1_command(cmd: str) -> tuple[bool, bool]:
-    """Evaluate if the entire command (including pipelines/chains) is safe in Tier 1.
+def evaluate_tier1_command(cmd: str, depth: int = 0) -> tuple[bool, bool]:
+    """Evaluate if the entire command (including pipelines/chains/heredocs/$(...)) is safe in Tier 1.
 
     Returns (is_safe, needs_write_override).
     """
-    segments = split_command_segments(cmd)
+    cmd_no_heredocs, heredoc_bodies = strip_heredocs(cmd)
+    sub_ok, cmd_resolved = resolve_and_validate_subcommands(cmd_no_heredocs, depth)
+    if not sub_ok:
+        return False, False
+
+    segments = split_command_segments(cmd_resolved)
     if segments is None:
         return False, False
 
@@ -554,7 +758,7 @@ def evaluate_tier1_command(cmd: str) -> tuple[bool, bool]:
     for seg in segments:
         if not seg.strip():
             continue
-        ok, seg_write = is_safe_segment(seg, safe_vars)
+        ok, seg_write = is_safe_segment(seg, safe_vars, heredoc_bodies)
         if not ok:
             return False, False
         if seg_write:
@@ -586,7 +790,7 @@ def get_active_marker_workspace(now: float | None = None) -> str:
 
 
 def is_path_in_workspace_or_special(target_path: str, payload: dict) -> bool:
-    """Return True if target_path is inside workspacePaths, active marker workspace, or an allowed special path."""
+    """Return True if target_path is inside effective workspaces (including Git root) or an allowed special path."""
     if not target_path:
         return False
     cleaned = target_path.strip("\"'")
@@ -595,84 +799,176 @@ def is_path_in_workspace_or_special(target_path: str, payload: dict) -> bool:
     real_target = os.path.realpath(os.path.expanduser(cleaned))
     if is_safe_special_target(cleaned) and is_safe_special_target(real_target):
         return True
-    workspaces = list(payload.get("workspacePaths") or [])
-    marker_ws = get_active_marker_workspace()
-    if marker_ws:
-        workspaces.append(marker_ws)
-    for ws in workspaces:
-        real_ws = os.path.realpath(os.path.expanduser(ws))
+    for real_ws in get_effective_workspaces(payload):
         if real_target == real_ws or real_target.startswith(real_ws + os.sep):
             return True
     return False
 
 
-def is_subagent_or_autonomous_active(payload: dict, cmd: str) -> bool:
-    """Return True if an autonomous execution (`/exec`, `.worktrees/`, or subagent) is active."""
-    now = time.time()
-    tool_args = payload.get("toolCall", {}).get("args", {})
-    cwd = (tool_args.get("Cwd") or tool_args.get("cwd") or "").strip()
-    real_cwd = os.path.realpath(os.path.expanduser(cwd)) if cwd else ""
+def _load_subagent_cache() -> dict[str, bool]:
+    try:
+        if os.path.exists(SUBAGENT_CACHE_FILE):
+            with open(SUBAGENT_CACHE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+    except Exception:
+        pass
+    return {}
 
-    # 1. Explicit workspace-scoped marker written by init-progress.sh
-    real_marker_ws = get_active_marker_workspace(now)
-    if real_marker_ws:
-        if cwd:
-            if real_cwd == real_marker_ws or real_cwd.startswith(real_marker_ws + os.sep):
-                return True
-        else:
-            workspaces = payload.get("workspacePaths") or []
-            for ws in workspaces:
-                real_ws = os.path.realpath(os.path.expanduser(ws))
-                if real_ws == real_marker_ws or real_ws.startswith(real_marker_ws + os.sep):
-                    return True
 
-    # 2. CWD operates inside an isolated .worktrees/ directory (normalized without .. traversal)
-    if cwd and ".." not in cwd.replace("\\", "/").split("/"):
-        if "/.worktrees/" in real_cwd or real_cwd.endswith("/.worktrees"):
-            return True
+def _save_subagent_cache(cache: dict[str, bool]) -> None:
+    try:
+        with open(SUBAGENT_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache, f)
+    except Exception:
+        pass
 
-    # 3. Detect if this conversationId is a spawned subagent (`self`) by checking
-    # recent sibling transcripts in ~/.gemini/jetski/brain/ for the subagent creation record
-    conv_id = payload.get("conversationId", "")
-    transcript_path = payload.get("transcriptPath", "")
-    if conv_id and transcript_path and "/brain/" in transcript_path:
-        # If explicit Cwd is provided, ensure it is inside one of the payload's workspacePaths or .worktrees/
-        workspaces = payload.get("workspacePaths") or []
-        if cwd and workspaces:
-            in_ws = any(
-                real_cwd == os.path.realpath(os.path.expanduser(ws))
-                or real_cwd.startswith(os.path.realpath(os.path.expanduser(ws)) + os.sep)
-                for ws in workspaces
+
+def is_subagent_conversation(conv_id: str, transcript_path: str) -> bool:
+    """Return True if conv_id belongs to a spawned subagent (via agentapi metadata or parent transcript scan)."""
+    if not conv_id:
+        return False
+
+    cache = _load_subagent_cache()
+    if conv_id in cache:
+        return bool(cache[conv_id])
+
+    # 1. Query `agentapi get-conversation-metadata <conv_id>` (~4ms against local Jetski Language Server)
+    agentapi_bin = (
+        shutil.which("agentapi")
+        or "/Users/balandin/.jetski/jetski/bin/agentapi"
+        or "/usr/local/bin/agentapi"
+    )
+    if os.path.exists(agentapi_bin) or shutil.which("agentapi"):
+        try:
+            proc = subprocess.run(
+                [agentapi_bin, "get-conversation-metadata", conv_id],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5,
+                check=False,
             )
-            if not in_ws and "/.worktrees/" not in real_cwd:
-                return False
+            if proc.returncode == 0 and proc.stdout:
+                meta = (
+                    json.loads(proc.stdout.decode("utf-8", errors="ignore"))
+                    .get("response", {})
+                    .get("conversationMetadata", {})
+                    .get("metadata", {})
+                )
+                if meta:
+                    nesting = int(meta.get("nestingDepth") or 0)
+                    parent_id = str(meta.get("parentConversationId") or "")
+                    sub_spec = meta.get("subagentSpec")
+                    is_sub = bool(nesting >= 1 or parent_id or sub_spec is not None)
+                    cache[conv_id] = is_sub
+                    _save_subagent_cache(cache)
+                    return is_sub
+        except Exception:
+            pass
 
-        subagent_creation_re = re.compile(
-            r'Created the following subagents:[^\n]*?"conversationId":\s*\\?"'
-            + re.escape(conv_id)
-            + r'\\?"'
-        )
-        brain_dir = transcript_path.split("/brain/")[0] + "/brain"
-        if os.path.isdir(brain_dir):
+    # 2. Unconditional scan of ~/.gemini/jetski/brain and ~/.gemini/antigravity/brain
+    # (Note: PreToolUse runs under sh -c without ANTIGRAVITY_LS_ADDRESS and transcriptPath may not contain '/brain/')
+    brain_dirs = [
+        os.path.expanduser("~/.gemini/jetski/brain"),
+        os.path.expanduser("~/.gemini/antigravity/brain"),
+    ]
+    if transcript_path and "/brain/" in transcript_path:
+        inferred_brain = transcript_path.split("/brain/")[0] + "/brain"
+        if inferred_brain not in brain_dirs:
+            brain_dirs.insert(0, inferred_brain)
+
+    now = time.time()
+    subagent_creation_re = re.compile(
+        r'Created the following subagents:[\s\S]{1,4000}?conversationId\\?":\s*\\?"'
+        + re.escape(conv_id)
+        + r'\\?"'
+    )
+
+    for brain_dir in brain_dirs:
+        if not os.path.isdir(brain_dir):
+            continue
+        candidates: list[tuple[float, str]] = []
+        try:
             for entry in os.listdir(brain_dir):
                 if entry == conv_id:
                     continue
                 t_file = os.path.join(
                     brain_dir, entry, ".system_generated", "logs", "transcript.jsonl"
                 )
-                try:
-                    if os.path.exists(t_file) and (
-                        now - os.path.getmtime(t_file) < ACTIVE_WINDOW_SECONDS
-                    ):
-                        size = os.path.getsize(t_file)
-                        with open(t_file, "r", encoding="utf-8", errors="ignore") as f:
-                            if size > 262144:
-                                f.seek(size - 262144)
-                            content = f.read()
-                        if subagent_creation_re.search(content):
-                            return True
-                except OSError:
-                    continue
+                if os.path.exists(t_file):
+                    mtime = os.path.getmtime(t_file)
+                    if now - mtime < 14 * 86400:
+                        candidates.append((mtime, t_file))
+        except OSError:
+            continue
+
+        # Check most recently active parent transcripts first (active parent is #1!)
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        for _, t_file in candidates:
+            try:
+                with open(t_file, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                if conv_id in content and subagent_creation_re.search(content):
+                    cache[conv_id] = True
+                    _save_subagent_cache(cache)
+                    return True
+            except OSError:
+                continue
+
+    return False
+
+
+def is_subagent_or_autonomous_active(payload: dict, cmd: str) -> bool:
+    """Return True if an autonomous execution (subagent, `/exec`, or `.worktrees/`) is active."""
+    now = time.time()
+    tool_args = payload.get("toolCall", {}).get("args", {})
+    cwd = (tool_args.get("Cwd") or tool_args.get("cwd") or "").strip()
+    real_cwd = os.path.realpath(os.path.expanduser(cwd)) if cwd else ""
+
+    # 1. Spawned subagent conversation (`nestingDepth >= 1` or `parentConversationId != ""`)
+    conv_id = payload.get("conversationId", "")
+    transcript_path = payload.get("transcriptPath", "")
+    if is_subagent_conversation(conv_id, transcript_path):
+        if cwd and ".." in cwd.replace("\\", "/").split("/"):
+            return False
+        if cwd:
+            eff_workspaces = get_effective_workspaces(payload)
+            if eff_workspaces:
+                in_ws = any(
+                    real_cwd == ws or real_cwd.startswith(ws + os.sep)
+                    for ws in eff_workspaces
+                )
+                if not in_ws and "/.worktrees/" not in real_cwd and not is_safe_special_target(real_cwd):
+                    return False
+        return True
+
+    # 2. Explicit workspace-scoped marker written by init-progress.sh
+    real_marker_ws = get_active_marker_workspace(now)
+    if real_marker_ws:
+        marker_root = find_enclosing_vcs_root(real_marker_ws) or real_marker_ws
+        if cwd:
+            if (
+                real_cwd == real_marker_ws
+                or real_cwd.startswith(real_marker_ws + os.sep)
+                or real_cwd == marker_root
+                or real_cwd.startswith(marker_root + os.sep)
+            ):
+                return True
+        else:
+            for ws in get_effective_workspaces(payload):
+                if (
+                    ws == real_marker_ws
+                    or ws.startswith(real_marker_ws + os.sep)
+                    or ws == marker_root
+                    or ws.startswith(marker_root + os.sep)
+                ):
+                    return True
+
+    # 3. CWD operates inside an isolated .worktrees/ directory (normalized without .. traversal)
+    if cwd and ".." not in cwd.replace("\\", "/").split("/"):
+        if "/.worktrees/" in real_cwd or real_cwd.endswith("/.worktrees"):
+            return True
 
     return False
 
@@ -697,17 +993,34 @@ def ask_response() -> dict:
     return {"decision": "ask"}
 
 
+def log_audit_event(payload: dict, result: dict) -> None:
+    """Append a compact JSON audit record to /tmp/cc-thingz-hook-audit.jsonl."""
+    try:
+        tool_call = payload.get("toolCall", {})
+        tool_name = (tool_call.get("name") or "").lower()
+        args = tool_call.get("args") or {}
+        cmd = args.get("CommandLine") or args.get("TargetFile") or ""
+        conv_id = payload.get("conversationId", "")
+        entry = {
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "conversationId": conv_id,
+            "tool": tool_name,
+            "target": str(cmd)[:160],
+            "decision": result.get("decision", ""),
+        }
+        with open(HOOK_AUDIT_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
+
+
 def evaluate_hook(payload: dict) -> dict:
     """Evaluate a PreToolUse payload and return the hook decision dict."""
     tool_call = payload.get("toolCall", {})
     tool_name = (tool_call.get("name") or "").lower()
     args = tool_call.get("args") or {}
 
-    # Read-only tools are always safe in Tier 1
-    if tool_name in READ_ONLY_TOOLS:
-        return allow_response(allow_writes=False)
-
-    # File-mutating tools are allowed ONLY when targeting the active workspace or allowed special paths
+    # File-mutating tools are allowed when targeting the effective workspace (including Git root) or special paths
     if tool_name in WRITE_FILE_TOOLS:
         target = (
             args.get("TargetFile")
@@ -720,12 +1033,14 @@ def evaluate_hook(payload: dict) -> dict:
             return allow_response(allow_writes=True)
         return ask_response()
 
-    if tool_name not in ("run_command", "bash", "execute_command", ""):
-        return ask_response()
+    # Non-shell tools (view_file, list_dir, grep_search, manage_task, schedule, send_message, invoke_subagent, call_mcp_tool, etc.)
+    # must ALWAYS return allow so matcher="*" never triggers confirmation dialogs on internal/read tools.
+    if tool_name not in SHELL_TOOLS:
+        return allow_response(allow_writes=False)
 
     cmd = args.get("CommandLine") or args.get("command") or ""
     if not cmd:
-        return ask_response()
+        return allow_response(allow_writes=False)
 
     # Tier 3: Never auto-allow dangerous/remote commands (force_ask overrides always-proceed)
     if is_dangerous_command(cmd):
@@ -740,8 +1055,8 @@ def evaluate_hook(payload: dict) -> dict:
     if t1_ok:
         return allow_response(allow_writes=t1_writes)
 
-    # Tier 2: During autonomous execution (`/exec`, `.worktrees/`, or spawned subagent `self`),
-    # allow all non-dangerous workspace commands (including perl -0pi -e, sed -i, git commit, etc.)
+    # Tier 2: During autonomous execution (spawned subagent, `/exec`, or `.worktrees/`),
+    # allow all non-dangerous workspace commands (including perl -0pi -e, sed -i, rm -f, etc.)
     if is_subagent_or_autonomous_active(payload, cmd):
         return allow_response(allow_writes=True)
 
@@ -751,7 +1066,6 @@ def evaluate_hook(payload: dict) -> dict:
 
 def run_tests() -> int:
     """Embedded test suite verifying positive Tier 1/Tier 2 cases and negative interactive/Tier 3 gates."""
-    # Isolate the autonomous marker so live machine state never masks Tier 1 tests
     os.environ["CC_THINGZ_AUTONOMOUS_MARKER"] = "/tmp/cc-thingz-test-nonexistent-marker"
 
     user_commands = [
@@ -772,12 +1086,23 @@ def run_tests() -> int:
         'node /path/to/home/.gemini/jetski/brain/00000000-0000-0000-0000-000000000000/scratch/accept_race_probe.js 3000',
         "grep -n '^\\(### Task\\|- \\[ \\]\\|- \\[x\\]\\)' /path/to/project/docs/plans/presubmit-fixes.md | sed -n '1,120p'; echo \"=== REMAINING UNCHECKED ===\"; grep -c '^- \\[ \\]' /path/to/project/docs/plans/presubmit-fixes.md",
         '/path/to/home/.gemini/config/skills/revmux/scripts/launch-revmux.sh --task autonomous-exec-guard --run 01-initial --profile agy-only > /tmp/revmux-autonomous-exec-guard-01-initial.json 2> /tmp/revmux-autonomous-exec-guard-01-initial.log',
+        'tmpfile="/tmp/agy-txt-copy-$(date +%s).txt"\ncat > "$tmpfile" << \'EOF\'\nHello world\nEOF',
+        'python3 - <<\'PY\'\nimport re, html\nprint("ok")\nPY',
+        'node -p "require(\'/path/to/package.json\').version"',
+        'set -e\ncd /path/to/project/.worktrees/presubmit-fixes\n( cd e2e && npm run lint:prettier-write && npm run check-types )',
     ]
 
     for idx, cmd in enumerate(user_commands, 1):
         res = evaluate_hook({"toolCall": {"name": "run_command", "args": {"CommandLine": cmd}}})
         assert res.get("decision") == "allow", (
             f"Failed Tier 1 auto-allow on user command #{idx}: {cmd}\nGot: {res}"
+        )
+
+    # Verify non-shell orchestration tools are always auto-allowed
+    for orch_tool in ("manage_task", "schedule", "send_message", "invoke_subagent", "call_mcp_tool"):
+        orch_res = evaluate_hook({"toolCall": {"name": orch_tool, "args": {}}})
+        assert orch_res.get("decision") == "allow", (
+            f"Orchestration tool {orch_tool} must be auto-allowed: {orch_res}"
         )
 
     # Verify read-only commands do NOT receive write_file(*) override
@@ -809,7 +1134,6 @@ def run_tests() -> int:
         "true & rm -rf src",
         "echo $(rm -rf src)",
         "touch /tmp/cc-thingz-autonomous-active",
-        "git commit -m 'unapproved interactive commit'",
     ]
     for neg_cmd in negative_interactive_commands:
         res_neg = evaluate_hook(
@@ -917,9 +1241,9 @@ def main() -> None:
             return
         payload = json.loads(raw)
         result = evaluate_hook(payload)
+        log_audit_event(payload, result)
         print(json.dumps(result))
     except Exception:
-        # Fail open to default Jetski ask behavior on malformed input
         print(json.dumps({"decision": "ask"}))
 
 
