@@ -45,6 +45,12 @@ DEFAULT_AUTONOMOUS_MARKER = os.path.expanduser(
 )
 SUBAGENT_CACHE_FILE = "/tmp/cc-thingz-subagent-cache.json"
 HOOK_AUDIT_LOG = "/tmp/cc-thingz-hook-audit.jsonl"
+# Tried in order when `agentapi` is not on PATH (hooks run under `sh -c` with a minimal PATH)
+AGENTAPI_FALLBACK_PATHS = (
+    "~/.gemini/jetski/bin/agentapi",
+    "~/.jetski/jetski/bin/agentapi",
+    "/usr/local/bin/agentapi",
+)
 ACTIVE_WINDOW_SECONDS = 6 * 3600  # 6 hours
 
 # Hard blocklist: never auto-approve even during autonomous execution (compiled with MULTILINE)
@@ -835,12 +841,11 @@ def is_subagent_conversation(conv_id: str, transcript_path: str) -> bool:
         return bool(cache[conv_id])
 
     # 1. Query `agentapi get-conversation-metadata <conv_id>` (~4ms against local Jetski Language Server)
-    agentapi_bin = (
-        shutil.which("agentapi")
-        or "/Users/balandin/.jetski/jetski/bin/agentapi"
-        or "/usr/local/bin/agentapi"
+    agentapi_bin = shutil.which("agentapi") or next(
+        (p for p in AGENTAPI_FALLBACK_PATHS if os.path.isfile(os.path.expanduser(p))), ""
     )
-    if os.path.exists(agentapi_bin) or shutil.which("agentapi"):
+    agentapi_bin = os.path.expanduser(agentapi_bin)
+    if agentapi_bin:
         try:
             proc = subprocess.run(
                 [agentapi_bin, "get-conversation-metadata", conv_id],
