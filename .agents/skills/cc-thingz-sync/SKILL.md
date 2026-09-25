@@ -45,13 +45,14 @@ If conflicts occur:
   - `plugin.json` in each plugin directory must remain.
   - `hooks.json` must remain at the root of `plugins/<name>/hooks.json` (not under `hooks/`).
   - `.agents/AGENTS.md` (the only rules file), `.agents/skills/` and `install.sh` must be preserved. Never let upstream reintroduce a root `AGENTS.md` or `GEMINI.md`, `.agents/CONTEXT.md` or the `.agent` symlink.
-  - The fork's review profile is the root `profile.md`; revmux reaches it through `.revmux` → `.agents/revmux` and `.agents/revmux/profile.md` → `../../profile.md`. If upstream changes `.revmux/profile.md` (upstream's own profile), discard that change and restore the symlinks:
+  - `.revmux/profile.md` is this fork's review profile; upstream's file at the same path describes upstream's project. During a rebase conflict on `.revmux/profile.md`, keep the fork's copy (`--theirs` during rebase is the commit being replayed) and stage it without committing:
     ```bash
-    rm -rf .revmux && ln -s .agents/revmux .revmux
-    ln -sfn ../../profile.md .agents/revmux/profile.md
-    git add .revmux .agents/revmux/profile.md profile.md
+    git checkout --theirs -- .revmux/profile.md && git add .revmux/profile.md
     ```
-    `rm -rf .revmux` without a trailing slash removes only the link or upstream's directory, never `.agents/revmux`.
+    After the rebase finishes, verify `.revmux/profile.md` still starts with `# Project profile: cc-thingz (AGY/Jetski fork)`; if an upstream commit overwrote it cleanly without a conflict, restore it from `ORIG_HEAD`:
+    ```bash
+    git checkout ORIG_HEAD -- .revmux/profile.md && git commit -m "chore: keep the fork's revmux profile"
+    ```
   - Hook implementations (`autonomous-exec-hook.py`, `plan-review-hook.py`, `ralphex-plans-link-hook.py`, `skill-forced-eval-hook.sh`) must maintain AGY `PreToolUse` / `Stop` / `PreInvocation` JSON contracts.
   - Tool calls in `SKILL.md` files must use AGY tools (`invoke_subagent`, `run_command`, `ask_question`, etc.) rather than Claude Code tools (`Agent`, `Bash`, `AskUserQuestion`, etc.).
 - **Always discard excluded upstream plugins, skills, CI workflows and Claude Code packaging** if upstream commits modify or reintroduce them:
