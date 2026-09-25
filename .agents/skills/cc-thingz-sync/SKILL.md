@@ -45,9 +45,11 @@ If conflicts occur:
   - `plugin.json` in each plugin directory must remain.
   - `hooks.json` must remain at the root of `plugins/<name>/hooks.json` (not under `hooks/`).
   - `.agents/AGENTS.md` (the only rules file), `.agents/skills/` and `install.sh` must be preserved. Never let upstream reintroduce a root `AGENTS.md` or `GEMINI.md`, `.agents/CONTEXT.md` or the `.agent` symlink.
-  - `.revmux` is a symlink to `.agents/revmux`, which holds this fork's review profile. If upstream changes `.revmux/profile.md` (upstream's own profile), discard that change and restore the symlink:
+  - The fork's review profile is the root `profile.md`; revmux reaches it through `.revmux` → `.agents/revmux` and `.agents/revmux/profile.md` → `../../profile.md`. If upstream changes `.revmux/profile.md` (upstream's own profile), discard that change and restore the symlinks:
     ```bash
-    rm -rf .revmux && ln -s .agents/revmux .revmux && git add .revmux .agents/revmux/profile.md
+    rm -rf .revmux && ln -s .agents/revmux .revmux
+    ln -sfn ../../profile.md .agents/revmux/profile.md
+    git add .revmux .agents/revmux/profile.md profile.md
     ```
     `rm -rf .revmux` without a trailing slash removes only the link or upstream's directory, never `.agents/revmux`.
   - Hook implementations (`autonomous-exec-hook.py`, `plan-review-hook.py`, `ralphex-plans-link-hook.py`, `skill-forced-eval-hook.sh`) must maintain AGY `PreToolUse` / `Stop` / `PreInvocation` JSON contracts.
