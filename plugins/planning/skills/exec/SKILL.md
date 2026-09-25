@@ -10,7 +10,7 @@ Execute plan file tasks sequentially, each in an isolated subagent.
 
 ## Arguments
 
-- `$ARGUMENTS` — path to plan file (optional; if omitted, ask user to pick from `plans_dir` userConfig directory, default: `docs/plans/`)
+- `$ARGUMENTS` — path to plan file (optional; if omitted, ask user to pick from the resolved plans directory — see Step 1)
 
 ## File Resolution
 
@@ -41,7 +41,13 @@ If the output is non-empty, store it as the resolved custom rules content. When 
 
 ### Step 1. Resolve plan file
 
-If `$ARGUMENTS` contains a file path, use it. Otherwise, list `.md` files in the `plans_dir` userConfig directory (default: `docs/plans/`), excluding `completed/`. If exactly one plan found, use it automatically. If multiple found, ask the user to pick one using ask_question.
+If `$ARGUMENTS` contains a file path, use it. Otherwise, resolve the plans directory — run from the workspace directory the session was started in, never a hand-picked one:
+
+```bash
+bash ~/.gemini/config/plugins/planning/scripts/resolve-project-dir.sh docs/plans '${user_config.plans_dir}'
+```
+
+It prints an absolute path (`<project-root>/docs/plans` by default; the project root is the nearest directory holding `AGENTS.md`, `GEMINI.md`, `.agents/` or an existing plans directory, bounded by the VCS root). List `.md` files in that directory, excluding `completed/`. If exactly one plan found, use it automatically. If multiple found, ask the user to pick one using ask_question.
 
 Read the plan file. Count total Task sections (`### Task N:` or `### Iteration N:`) to know the scope.
 
@@ -96,6 +102,7 @@ In BOTH cases: invoke the ask_question tool **now**, do not generate text first,
 5. **This means Step 4 (create-branch.sh) is SKIPPED** — the branch already exists inside the worktree. Running create-branch.sh here would `git checkout -b` in the main tree and break isolation.
 6. **Isolation guard**: verify the main tree is untouched — `git -C "$main_tree" branch --show-current` MUST still equal `main_branch`. If it changed, STOP and report the isolation breach instead of continuing.
 7. Every later step (task execution, reviews, finalize, stats, the plan move) runs inside the worktree; use `<name>` wherever a branch name is needed. At completion, report `worktree_path` and `<name>` so the user can review and merge.
+8. **Re-root the plan path.** Step 1 resolved it against the main tree, so from here on use `PLAN_FILE_PATH = <worktree_path>/<plan path relative to main_tree>` — e.g. `<main_tree>/<sub-project>/docs/plans/x.md` becomes `<worktree_path>/<sub-project>/docs/plans/x.md`. This keeps a sub-project's plan, and its `completed/` move, inside the same sub-project of the worktree. Passing the main-tree path on would edit and move the plan in the main checkout, which is an isolation breach.
 
 **If the user picks "In-place" or "Stay here"** — set `worktree_mode = false` and proceed normally; Step 4 creates the branch in this working directory.
 

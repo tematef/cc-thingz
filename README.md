@@ -209,7 +209,7 @@ Structured implementation planning with interactive annotation review and autono
 - **Tier 3 (Hard Safety Gate):** Always forces confirmation (`force_ask`) for `git push`, `hg push`, `sudo`/`su`/`doas`, `rm -rf /` (`rm -fr /`), `curl | bash`, and destructive disk commands.
 - Registered globally by `./install.sh` (which also supports `--list`, `--exclude <skills>`, and `--restore [skills]`). To disable globally, set `"enabled": false` on `"autonomous-exec-guard"` in `~/.gemini/config/hooks.json`.
 
-**plan command** — creates a plan file in `docs/plans/yyyymmdd-<task-name>.md` through interactive context gathering:
+**plan command** — creates a plan file in the project's `docs/plans/yyyymmdd-<task-name>.md` through interactive context gathering:
 - **Step 0** — parses intent and explores codebase for relevant context
 - **Step 1** — asks focused questions one at a time (goal, scope, constraints, testing approach, title)
 - **Step 1.5** — proposes 2-3 implementation approaches with trade-offs (skipped if obvious)
@@ -312,7 +312,9 @@ Configuration via `userConfig` (prompted at plugin install):
 | `review_iterations` | `5` | Max fix-and-recheck cycles during internal review |
 | `external_review_iterations` | `10` | Max iterations for external review adversarial loop |
 | `finalize_enabled` | `true` | Whether to run the finalize phase (rebase + squash) |
-| `plans_dir` | `docs/plans` | Directory where plan files are located |
+| `plans_dir` | `docs/plans` | Plans directory. Relative values resolve against the project root (below), absolute values are used as-is |
+
+**Where plans live** — `plugins/planning/scripts/resolve-project-dir.sh docs/plans` resolves the plans directory for make, exec and plan-review (the backlog skill uses a byte-identical copy for `docs/backlog`). The project root is the nearest directory, walking up from the agent's working directory and never past the VCS root, that holds `AGENTS.md`, `GEMINI.md`, `.agents/` or an existing plans directory (fallback: the VCS root; outside a VCS: the working directory). Plans go to `<project-root>/docs/plans/`, finished ones to `completed/` beside them. A monorepo sub-project with its own `AGENTS.md`, started in its own folder, therefore keeps `sub/docs/plans/` and `sub/docs/plans/completed/`; a plain repository keeps `docs/plans/` at its root.
 
 **External review contract** — review phase 3 always runs through `run-external-review.sh`, which receives the `external_review_cmd` value and the resolved prompt. When the setting is empty it falls back to codex via `run-codex.sh`. A custom command must:
 
@@ -390,7 +392,7 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 | skill | `/workflow:wrong` | Reset and re-evaluate when current approach isn't working |
 | skill | `/workflow:md-copy` | Format final answer as markdown and copy to clipboard |
 | skill | `/workflow:txt-copy` | Copy generated text content to clipboard |
-| skill | `/workflow:backlog` | Read, work, and maintain deferred-work items in `docs/backlog/` |
+| skill | `/workflow:backlog` | Read, work, and maintain deferred-work items in `docs/backlog/`, archiving closed ones to `completed/` |
 
 **learn** — reviews conversation history, extracts strategic project knowledge (architecture patterns, conventions, operational insights), and saves selected items to the project CLAUDE.md. When `CLAUDE.local.md` is present, per-developer / per-checkout discoveries (machine-specific tooling, environment quirks) are routed there instead. Defers to any memory-placement guidance documented in the project or user `CLAUDE.md` or `.claude/rules/`. Uses granular selection via AskUserQuestion so the user picks exactly what to keep.
 
@@ -402,7 +404,7 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 
 **txt-copy** — copies generated text (emails, messages, letters) to clipboard via a timestamped temp file. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
 
-**backlog** — maintains `docs/backlog/`, one markdown file per deferred item, for work that is real but not being done now. Each item carries `worth` (yes/later/no) and `added` (ISO date) in frontmatter, plus `where` (path:line) when the item is anchored to one place, with a free body. Lists the backlog with each present `where` verified against the current tree so stale anchors are reported as stale rather than as work, takes a slug argument to jump straight to one item, and `--all` to walk every item to a disposition one at a time. Either form briefs the item first — summary, effort, blast radius, materiality — so the call is made against facts rather than the item's own account. Before appending it finds candidates by the `where` path and slug, settling it on the defect each one claims rather than on a shared path. No checkbox and no in-progress marker: the item is deleted in the commit that lands its fix. Refuses to write into a branch other than the repository default without asking first. Git only — the lifecycle is expressed in `git rm`, branch detection, and staging.
+**backlog** — maintains the project's `docs/backlog/` (resolved like the plans directory, so a monorepo sub-project with its own rules keeps its own), one markdown file per deferred item, for work that is real but not being done now. Each item carries `worth` (yes/later/no) and `added` (ISO date) in frontmatter, plus `where` (path:line) when the item is anchored to one place, with a free body. Lists the backlog with each present `where` verified against the current tree so stale anchors are reported as stale rather than as work, takes a slug argument to jump straight to one item, and `--all` to walk every item to a disposition one at a time. Either form briefs the item first — summary, effort, blast radius, materiality — so the call is made against facts rather than the item's own account. Before appending it finds candidates by the `where` path and slug, settling it on the defect each one claims rather than on a shared path. No checkbox and no in-progress marker: in the commit that lands its fix the item gains `closed` and `outcome: fixed` and moves to `docs/backlog/completed/`; a dropped item gets `outcome: dropped` and the same move. Appending also checks `completed/`, so a regression or a resurfacing rejected idea is flagged rather than refiled silently. Refuses to write into a branch other than the repository default without asking first. Git only — the lifecycle is expressed in `git mv`, branch detection, and staging.
 
 ### agterm-ide-launcher
 

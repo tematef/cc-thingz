@@ -1,12 +1,12 @@
 ---
-description: Create structured implementation plan in docs/plans/
+description: Create structured implementation plan in the project's docs/plans/
 argument-hint: describe the feature or task to plan
 allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Implementation Plan Creation
 
-create an implementation plan in `docs/plans/yyyymmdd-<task-name>.md` with interactive context gathering.
+create an implementation plan in `<plans-dir>/yyyymmdd-<task-name>.md` (the project's `docs/plans/`, resolved in step 2) with interactive context gathering.
 
 ## custom rules loading
 
@@ -136,7 +136,15 @@ use ask_question tool to let user select preferred approach before creating the 
 
 ## step 2: create plan file
 
-check `docs/plans/` for existing files, then create `docs/plans/yyyymmdd-<task-name>.md` (use current date):
+resolve the plans directory first — run from the workspace directory the session was started in, never a hand-picked one:
+
+```bash
+bash ~/.gemini/config/plugins/planning/scripts/resolve-project-dir.sh docs/plans '${user_config.plans_dir}'
+```
+
+it prints an absolute path — `<project-root>/docs/plans` by default, where the project root is the nearest directory holding `AGENTS.md`, `GEMINI.md`, `.agents/` or an existing plans directory, bounded by the VCS root. a sub-project started in its own folder (`<repo>/<sub-project>`) therefore gets `<repo>/<sub-project>/docs/plans`. below, `<plans-dir>` means that printed path.
+
+check `<plans-dir>` for existing files, then create `<plans-dir>/yyyymmdd-<task-name>.md` (use current date; create the directory if needed):
 
 ### plan structure
 
@@ -267,7 +275,7 @@ Example (NOTICE: Files block + tests as separate checklist items):
 ### Task N: [Final] Update documentation
 - [ ] update README.md if needed
 - [ ] update GEMINI.md / AGENTS.md if new patterns discovered
-- [ ] move this plan to `docs/plans/completed/`
+- [ ] move this plan to the `completed/` directory next to it
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*
@@ -285,7 +293,7 @@ Example (NOTICE: Files block + tests as separate checklist items):
 
 ## step 3: next steps
 
-after creating the file, tell user: "created plan: `docs/plans/yyyymmdd-<task-name>.md`"
+after creating the file, tell user: "created plan: `<plans-dir>/yyyymmdd-<task-name>.md`" with the absolute path
 
 then use ask_question:
 
@@ -375,8 +383,8 @@ then use ask_question:
 5. **on completion**:
    - verify all checkboxes marked
    - run final test suite
-   - move plan to `docs/plans/completed/`
-   - create directory if needed: `mkdir -p docs/plans/completed`
+   - move plan to `<plans-dir>/completed/` (the `completed/` directory next to the plan)
+   - create directory if needed: `mkdir -p <plans-dir>/completed`
 
 6. **partial implementation exception**:
    - if a task provides partial implementation where tests cannot pass until a later task:

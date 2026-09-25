@@ -898,6 +898,30 @@ assert_output "git/clobber: existing destination not overwritten" "# OLD COMPLET
 commits_after="$(git -C "$GIT_MV_CLOBBER" rev-list --count HEAD)"
 assert_output "git/clobber: no new commit" "$commits_before" "$commits_after"
 
+# test 26: monorepo sub-project plan passed as an absolute path (what
+# resolve-project-dir.sh yields) -> completed/ lands inside the sub-project
+echo ""
+echo "test 26: git repo, sub-project plan by absolute path -> sub-project completed/"
+GIT_MV_SUB="$(cd "$(mk_tmp)" && pwd -P)"
+make_git_repo "$GIT_MV_SUB" main
+(
+    cd "$GIT_MV_SUB"
+    mkdir -p subproj/docs/plans docs/plans
+    touch subproj/AGENTS.md
+    echo "# plan" >"subproj/docs/plans/$PLAN_NAME"
+    git add subproj
+    git commit -q -m "add sub-project plan"
+)
+rc=0
+(cd "$GIT_MV_SUB/subproj" && bash "$MOVE_PLAN" "$GIT_MV_SUB/subproj/docs/plans/$PLAN_NAME" >/dev/null 2>&1) || rc=$?
+assert_output "git/move-sub: exit code 0" "0" "$rc"
+[ -f "$GIT_MV_SUB/subproj/docs/plans/completed/$PLAN_NAME" ] && dest="present" || dest="missing"
+assert_output "git/move-sub: file under sub-project completed/" "present" "$dest"
+[ -e "$GIT_MV_SUB/docs/plans/completed" ] && root_completed="present" || root_completed="absent"
+assert_output "git/move-sub: no completed/ at repo root" "absent" "$root_completed"
+files="$(git -C "$GIT_MV_SUB" show --name-status --pretty=format: HEAD | sed '/^$/d')"
+assert_contains "git/move-sub: commit records sub-project completed/ path" "$files" "subproj/docs/plans/completed/$PLAN_NAME"
+
 # summary
 echo ""
 echo "======================================"
