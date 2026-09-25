@@ -118,6 +118,13 @@ assert_output "idempotent/stdout" "{}" "$(run_hook "$R/sub")"
 assert_output "idempotent/same-entry" "$before" "$(ls -li "$R/.ralphex" | grep plans)"
 
 echo ""
+echo "test 4a: a root session after the sub-project keeps the shared link on the sub-project"
+assert_output "shared-first-wins/stdout" "{}" "$(run_hook "$R")"
+assert_output "shared-first-wins/link" "symlink:../sub/docs/plans" "$(kind "$R/.ralphex/plans")"
+assert_output "shared-first-wins/no-root-docs" "missing" "$(kind "$R/docs")"
+assert_output "shared-first-wins/same-entry" "$before" "$(ls -li "$R/.ralphex" | grep plans)"
+
+echo ""
 echo "test 5: existing link pointing elsewhere is never re-pointed"
 R="$(mk_repo)"
 mkdir -p "$R/.ralphex" "$R/elsewhere"
