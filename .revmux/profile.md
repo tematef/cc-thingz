@@ -2,8 +2,6 @@
 
 Review profile for [revmux](https://github.com/umputun/revmux). revmux passes it to every reviewer agent as
 the project's conventions and standards, and it sets what counts as a finding. AGY does not load it as a rule.
-revmux reads only `./.revmux/profile.md`, which reaches this file through the `.revmux` → `.agents/revmux`
-symlink.
 
 ## What it is
 

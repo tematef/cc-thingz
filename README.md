@@ -133,7 +133,7 @@ Configuration keys (review toggles, external review command, finalize) and promp
 
 Multi-agent review of branches and pull requests is done by **revmux**, a separate plugin installed alongside this suite.
 
-[profile.md](profile.md) is this repository's revmux review profile. revmux gives it to every reviewer agent: it describes what the project is, which languages are involved, where the rules live, what a real failure looks like, the reporting bar, and which conventions are deliberate. revmux reads only `./.revmux/profile.md`, so `.revmux` is a symlink to `.agents/revmux`, whose `profile.md` links back to the root file. Edit the root file. It stays generic, with no user- or machine-specific details.
+[.revmux/profile.md](.revmux/profile.md) is this repository's revmux review profile. revmux gives it to every reviewer agent: it describes what the project is, which languages are involved, where the rules live, what a real failure looks like, the reporting bar, and which conventions are deliberate. revmux reads only `./.revmux/profile.md`, relative to the directory it is started in, so the file lives there and applies only to reviews run inside this repository; other repositories need their own. It stays generic, with no user- or machine-specific details.
 
 ### thinking-tools
 
@@ -238,10 +238,8 @@ Ask `/planning:make` or `brainstorm` to show, add or clear rules at either level
 .
 ├── .agents/                      # all project agent data
 │   ├── AGENTS.md                 # rules for agents working in this repo (the only rules file)
-│   ├── skills/cc-thingz-sync/    # project-only skill: upstream sync
-│   └── revmux/                   # profile.md -> ../../profile.md; tasks/ (round archives, gitignored)
-├── .revmux -> .agents/revmux     # symlink: revmux reads only ./.revmux
-├── profile.md                    # revmux review profile (see review)
+│   └── skills/cc-thingz-sync/    # project-only skill: upstream sync
+├── .revmux/                      # profile.md (revmux review profile, see review); tasks/ (round archives, gitignored)
 ├── install.sh                    # registers and links the plugins
 ├── plugins/
 │   ├── brainstorm/
