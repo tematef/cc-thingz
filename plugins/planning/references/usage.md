@@ -12,7 +12,7 @@ The planning plugin has three components: make (plan creation), exec (autonomous
 1. **Step 0** — parses intent (feature, bug fix, refactor, migration) and explores codebase for context
 2. **Step 1** — asks focused questions one at a time: goal, scope, constraints, testing approach, title
 3. **Step 1.5** — proposes 2-3 implementation approaches with trade-offs (skipped if obvious)
-4. **Step 2** — creates plan file at `docs/plans/yyyymmdd-<task-name>.md`
+4. **Step 2** — creates plan file at `<plans-dir>/yyyymmdd-<task-name>.md` (see [Where plans live](#where-plans-live))
 5. **Step 3** — offers next steps: interactive review, auto review, implement, or done
 
 ### Examples
@@ -36,7 +36,7 @@ The planning plugin has three components: make (plan creation), exec (autonomous
 - "exec", "execute plan", "run plan"
 
 ### Workflow
-1. Resolves plan file (from argument or picks from `docs/plans/`)
+1. Resolves plan file (from argument or picks from `<plans-dir>`)
 2. Asks about worktree isolation (worktree vs current directory)
 3. Creates a feature branch
 4. Executes tasks sequentially — one subagent per task, commits after each
@@ -54,7 +54,16 @@ Set via `userConfig` in plugin.json (prompted at install):
 | `review_iterations` | `5` | max fix-and-recheck cycles |
 | `external_review_iterations` | `10` | max external review iterations |
 | `finalize_enabled` | `true` | run rebase + squash phase |
-| `plans_dir` | `docs/plans` | directory for plan files |
+| `plans_dir` | `docs/plans` | plans directory; relative to the project root, absolute used as-is |
+
+### Where plans live
+`scripts/resolve-project-dir.sh docs/plans` is the single source for the plans directory; make, exec and plan-review all call it from the workspace directory. The backlog skill ships a byte-identical copy and resolves `docs/backlog` the same way.
+
+- **Project root** — the nearest directory, walking up from the working directory and never past the VCS root, that holds `AGENTS.md`, `GEMINI.md`, `.agents/` or an existing plans directory. No match: the VCS root. Outside a VCS: the working directory.
+- **Plans** — `<project-root>/docs/plans/`, or `plans_dir` resolved against the project root.
+- **Completed plans** — `completed/` next to the plan (`move-plan.sh`), so they follow the same root.
+
+A monorepo sub-project with its own rules (`<repo>/<sub-project>/AGENTS.md`) started in its own folder gets `<repo>/<sub-project>/docs/plans/` and `<repo>/<sub-project>/docs/plans/completed/`; a plain repository gets `<repo>/docs/plans/` from anywhere inside it. In worktree mode exec re-roots the resolved plan path into the worktree.
 
 ### Customization
 Prompts and agent definitions use a four-layer override chain:

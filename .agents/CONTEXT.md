@@ -11,7 +11,7 @@ This repository is an adapted fork of [umputun/cc-thingz](https://github.com/ump
 `cc-thingz` extends the AI assistant with specialized subagents, multi-stage review loops, interactive TUI hooks, and workflow automations:
 
 ### 1. Planning (`plugins/planning`)
-- **`/planning:make`**: Interactive requirements elicitation and structured plan creation in `docs/plans/`.
+- **`/planning:make`**: Interactive requirements elicitation and structured plan creation in the project's `docs/plans/` (resolved by `scripts/resolve-project-dir.sh` from the working directory, so monorepo sub-projects keep their own `docs/plans/` and `completed/`).
 - **`/planning:exec`**: Autonomous, sequential plan execution where each task runs in an isolated `invoke_subagent` instance, followed by multi-phase code reviews (comprehensive, smells, external, critical-only), commit finalization, and session stats summaries.
 - **`plan-review-hook.py`**: Intercepts the agent turn via AGY's `Stop` lifecycle hook. When an `implementation_plan.md` artifact is created or modified, it opens an interactive visual diff in `revdiff` (or editor fallback) for user line-by-line annotations before execution begins. State is tracked via SHA-256 hashes (`.plan_reviewed.hash`) to avoid redundant review prompts.
 
@@ -33,7 +33,7 @@ This repository is an adapted fork of [umputun/cc-thingz](https://github.com/ump
 ### 6. Workflow & Maintenance (`plugins/workflow`)
 - **`/workflow:learn`**: Extracts reusable project conventions and patterns from conversation trajectories and records them in documentation.
 - **`/workflow:clarify`**: Analyzes developer confusion, determines whether it stems from documentation, configuration, or genuine software defects, and routes to planning.
-- **`/workflow:backlog`**: Tracks deferred technical debt and non-blocking improvement items.
+- **`/workflow:backlog`**: Tracks deferred technical debt and non-blocking improvement items in the project's `docs/backlog/`; closed items are archived to `docs/backlog/completed/` with `closed`/`outcome` frontmatter.
 - **`/workflow:wrong`**: Adversarial assumption tester that identifies logical fallacies or architectural blindspots.
 - **`/workflow:sync` (`cc-thingz-sync`)**: Syncs and rebases this fork against upstream `umputun/cc-thingz` while preserving AGY/Jetski adaptations.
 

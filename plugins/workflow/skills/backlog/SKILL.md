@@ -1,25 +1,41 @@
 ---
 name: backlog
-description: Read, work, and maintain a Git repo's deferred-work items in docs/backlog/, one file per item. Use when the user says "backlog", "check backlog", "what's on my backlog", "work the backlog", "address the backlog", "add to backlog", "clean up backlog", or when a review or task produced items that are real but not being fixed now. Owns the item format and the create-then-delete lifecycle.
+description: Read, work, and maintain a project's deferred-work items in its docs/backlog/, one file per item, archiving closed ones to docs/backlog/completed/. Use when the user says "backlog", "check backlog", "what's on my backlog", "work the backlog", "address the backlog", "add to backlog", "clean up backlog", or when a review or task produced items that are real but not being fixed now. Owns the item format and the create-then-archive lifecycle.
 allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Backlog
 
-`docs/backlog/` at a repo root holds work that is real but not being done now: a defect a change did not
+`docs/backlog/` at the project root holds work that is real but not being done now: a defect a change did not
 introduce, drift with no user-visible symptom, a fix whose blast radius exceeded its value, an idea worth
 keeping. One file per item. It is the maintainer's own list — it never gates anything and never reaches a
 contributor.
 
-The directory path is fixed, so every invocation in a repo reads and writes one predictable store.
+## Location
 
-**Git only.** The lifecycle is expressed in Git — `git rm` to close an item, branch detection before
+Resolve the backlog directory first, running from the workspace directory the session was started in — never a
+hand-picked one:
+
+```bash
+bash ~/.gemini/config/plugins/workflow/skills/backlog/scripts/resolve-project-dir.sh docs/backlog
+```
+
+It prints an absolute path, `<project-root>/docs/backlog`: the project root is the nearest directory, walking up
+and never past the repository root, that holds `AGENTS.md`, `GEMINI.md`, `.agents/` or an existing
+`docs/backlog/`. A monorepo sub-project with its own rules keeps its own backlog; a plain repository keeps one at
+its root. Below, `<backlog-dir>` means that printed path. Every invocation from the same project therefore
+reads and writes one predictable store.
+
+- **Open items** — `<backlog-dir>/*.md`, top level only.
+- **Closed items** — `<backlog-dir>/completed/`, never listed, walked or worked; see **Lifecycle**.
+
+**Git only.** The lifecycle is expressed in Git — `git mv` to close an item, branch detection before
 writing, staging and committing the file. Outside a Git repository, say so plainly and stop; do not
 improvise an equivalent in another VCS.
 
 ## Item format
 
-`docs/backlog/<slug>.md`. The slug names the defect, not the file it lives in
+`<backlog-dir>/<slug>.md`. The slug names the defect, not the file it lives in
 (`reopen-fallback-ignores-frontmost.md`), so it can be cited from a commit and dedupe is a filename check.
 
 ```markdown
@@ -35,7 +51,8 @@ user's last-window capture replays only when the exited window happened to be `w
 reviewing PR #370; the fix touches restore ordering, which is why it was deferred rather than done inline.
 ```
 
-Three frontmatter fields, written once and rewritten only as **Appending** below allows:
+Three frontmatter fields on an open item, written once and rewritten only as **Appending** below allows
+(archiving adds `closed` and `outcome` once — see **Lifecycle**):
 
 - **`worth: yes | no | later`** — the triage call, and the field the list is ordered by:
   - **`yes`** — the value is agreed and it should be fixed. Says nothing about schedule: an item
@@ -44,8 +61,9 @@ Three frontmatter fields, written once and rewritten only as **Appending** below
     or the condition that would settle it; without that it is a `yes` or a `no` in disguise.
   - **`no`** — a decision not to fix, kept so the same finding is not rediscovered and re-argued by the
     next review that touches the file. Keep a `no` only while that rationale still earns its place; once
-    it does not, delete the file rather than carrying it.
-- **`where: path:line`** — omit when the item is not anchored to one place. Its path narrows the dedupe
+    it does not, drop it (see **Lifecycle**) rather than carrying it.
+- **`where: path:line`** — the path is relative to the repository root, not the project root, so it stays
+  valid for a sub-project's backlog. Omit when the item is not anchored to one place. Its path narrows the dedupe
   search alongside the slug and the line is a navigation hint that moves. Compare paths only when both
   items have `where`; two items missing it are not thereby the same item.
 - **`added: YYYY-MM-DD`** — never updated, so it reads as age. A year-old item is itself information.
@@ -59,9 +77,23 @@ the anti-rediscovery job it is kept for.
 
 ## Lifecycle
 
-Create the file. When the work lands, `git rm` it in the commit that lands the fix — not a separate cleanup
-commit. There is no checkbox, no in-progress marker: the staged deletion is the state. Dropping an item
+Create the file. When the work lands, archive it in the commit that lands the fix — not a separate cleanup
+commit. There is no checkbox, no in-progress marker: the staged move is the state. Dropping an item
 decided against is the same operation with a different reason.
+
+**Archiving an item** — the one way an item leaves the open list:
+
+1. Add two frontmatter fields below `added`: `closed: YYYY-MM-DD` (zero-padded, today) and
+   `outcome: fixed` or `outcome: dropped`. For a drop, append one body sentence saying why, unless the body
+   already carries it (a `no` does).
+2. `git mv <backlog-dir>/<slug>.md <backlog-dir>/completed/<slug>.md`, creating `completed/` if needed. If that
+   name is taken — the same defect was closed before — use `completed/<slug>-<closed-date>.md`. Never
+   overwrite an archived item.
+3. Stage the moved file with the fix, or on its own for a pure drop. Never `git rm` an item.
+
+The archive is history: it lets a later reader see what was fixed or rejected and when, and it is where a
+re-sighting is caught (see **Dedupe** under **Appending**). Reopening an archived item is the reverse move
+with `closed` and `outcome` removed.
 
 ## Briefing an item
 
@@ -90,7 +122,7 @@ the item's own account: the reasoning in a file goes stale the same way its `whe
 An argument that starts with `-` is option syntax, so a file whose name begins with `-` cannot be reached
 as a slug; `all.md` is still an ordinary slug and unaffected.
 
-1. Glob `docs/backlog/*.md` from the repo root and read every file in full. Keep `worth: no` items in the
+1. Glob `<backlog-dir>/*.md` (top level only — never `completed/`) and read every file in full. Keep `worth: no` items in the
    walk: worth informs the recommendation, it does not filter the list.
 2. Before asking anything, verify every `where` and analyze each item's value, complexity, and blockers.
    Identify explicit blockers and relationships between items, ask about real prerequisites before their
@@ -109,15 +141,15 @@ as a slug; `all.md` is still an ordinary slug and unaffected.
    fix may have moved or changed it. If that materially changes the recommendation or any part of the
    briefing, print the updated briefing and ask about that item again — an answer given against a
    briefing now known to be stale is not an answer to act on.
-   Apply the usual tests, formatters, and linters, and `git rm` a fixed or dropped item under the
+   Apply the usual tests, formatters, and linters, and archive a fixed or dropped item under the
    lifecycle rule above.
 5. Continue until every item has a disposition. Never auto-commit. If the user later authorizes commits,
-   default to one commit per independent fix with its item deletion; pure drops may share one backlog-only
-   cleanup commit.
+   default to one commit per independent fix with its item's archive move; pure drops may share one
+   backlog-only cleanup commit.
 
 ## A slug as the argument
 
-`/workflow:backlog <slug>` names one item: `docs/backlog/<slug>.md`, the file name without its extension. Read
+`/workflow:backlog <slug>` names one open item: `<backlog-dir>/<slug>.md`, the file name without its extension. Read
 that file alone, verify its `where` the same way step 2 below does when it has one, print the briefing
 above for it, and go straight to the fix-or-drop question — skip the listing, which is not what was
 asked for. A slug matching no file is a mistake worth saying plainly: report it and list what is there
@@ -125,7 +157,7 @@ instead of guessing at the nearest name.
 
 ## Reading and working the list
 
-1. Glob `docs/backlog/*.md` from the repo root and read each file's frontmatter and H1. If the directory
+1. Glob `<backlog-dir>/*.md` (top level only — never `completed/`) and read each file's frontmatter and H1. If the directory
    does not exist, say so plainly and offer to start one — do not create it empty.
 2. **Verify before reporting.** `where` goes stale when a file is renamed or a line moves. For each item
    that has one, check the location still exists and still says what the item claims; report a stale item
@@ -139,8 +171,8 @@ instead of guessing at the nearest name.
    - **leave it** — report only, nothing changes.
 
    With more than four items, group them across several questions rather than truncating the list.
-5. On "fix it now": do the work under the usual gates — tests, formatters, linters — and `git rm` the file
-   in the same commit. Never auto-commit.
+5. On "fix it now": do the work under the usual gates — tests, formatters, linters — and archive the item
+   as `fixed` in the same commit. On "drop": archive it as `dropped`. Never auto-commit.
 
 ## Appending
 
@@ -175,7 +207,11 @@ review that touches its file, so the same item arrives repeatedly. If it is alre
 it alone. If the new sighting sharpens the description or changes the `worth` call, edit that file in place
 rather than adding a second one.
 
-Create `docs/backlog/` if it does not exist — after the branch check above, never before it.
+Check `<backlog-dir>/completed/` the same way. A match there is not a duplicate of open work: say which
+archived item it matches and its `outcome` — a `fixed` match is a regression, a `dropped` match is a
+rejected idea resurfacing — and ask whether to reopen that item or file a fresh one, rather than deciding.
+
+Create `<backlog-dir>` if it does not exist — after the branch check above, never before it.
 
 When the files are written, read `git diff --cached --name-only` before offering anything. Nothing has
 been staged yet at that point, so anything it lists is pre-existing — including another backlog file from
@@ -192,6 +228,6 @@ invisible from every other machine, so the push is part of filing rather than an
   maintainer's cleanup notes; surfacing them on a contributor's change reads as scope pressure.
 - **Never auto-commit** an item file, and never commit it alongside unrelated work.
 - **Do not fix an item without being asked.** Reading the backlog is not permission to work it.
-- **Prefer deleting to demoting** for an item nobody will ever do and whose reasoning nobody needs — say
-  so and offer to drop it. This does not reach a `no` that is still doing its job of stopping a
+- **Prefer dropping to demoting** for an item nobody will ever do — say so and offer to drop it, which
+  archives it as `dropped`. This does not reach a `no` that is still doing its job of stopping a
   rediscovery; that one stays.
