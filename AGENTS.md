@@ -58,6 +58,11 @@ Skills, prompts and scripts use AGY tool names, never Claude Code ones:
 - AGY config lives in `~/.gemini/config/`; `./install.sh` registers the plugins in `~/.gemini/config/plugins.json` (plugins are linked, so edits here take effect immediately).
 - Per-user plugin data: `~/.gemini/config/plugins_data/cc-thingz/`.
 - Project-level custom rules: `.agents/<name>-rules.md` (e.g. `.agents/planning-rules.md`, `.agents/brainstorm-rules.md`); they take precedence over the user-level copy in the data directory.
+- All project agent data lives under `.agents/`; only `AGENTS.md` stays at the root, where AGY discovers it:
+  - `.agents/skills/` — project-only skills (`cc-thingz-sync`);
+  - `.agents/<name>-rules.md` — project rules for the planning and brainstorm plugins;
+  - `.agents/revmux/profile.md` — the revmux review profile (checked in); `.agents/revmux/tasks/` — review round archives (gitignored).
+  - revmux reads only `./.revmux/`, with no flag to relocate it, so the root `.revmux` is a symlink to `.agents/revmux`. Keep it a symlink; never recreate a real `.revmux/` directory.
 - Never hardcode machine-specific paths, personal settings or project names; use environment variables, the data directory, or resolve at runtime (`resolve-project-dir.sh`).
 
 ## 6. Documentation integrity
@@ -71,6 +76,7 @@ Skills, prompts and scripts use AGY tool names, never Claude Code ones:
   - `plugins/release-tools/` (`last-tag`, `new`), `plugins/review/skills/git-review/`, `plugins/review/skills/pr/`, `tests/test-release-tools.sh` — `revmux` replaces `git-review` and `pr`;
   - `.github/workflows/`;
   - Claude Code packaging: `CLAUDE.md`, `.claude-plugin/`, `plugins/*/.claude-plugin/`.
+- **Keep ours for `.revmux/`**: upstream's `.revmux/profile.md` describes upstream's project. When upstream touches it, keep the `.revmux` → `.agents/revmux` symlink and `.agents/revmux/profile.md` unchanged (do not `git rm` the symlink).
 
 ## 8. No remote CI
 

@@ -2,7 +2,8 @@
 .ralphex/progress/
 
 # revmux round archives -- the profile is checked in, the runs are not
-.revmux/tasks/
+# (.revmux is a symlink to .agents/revmux; revmux only looks in ./.revmux)
+.agents/revmux/tasks/
 
 # macOS
 .DS_Store
