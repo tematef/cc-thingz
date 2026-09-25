@@ -2,7 +2,7 @@ Review code for style consistency, convention adherence, and code smells.
 
 ## Project Convention Check
 
-1. Read GEMINI.md, AGENTS.md, or CLAUDE.md (both project-level and user-level if present) to understand project rules
+1. Read AGENTS.md or GEMINI.md (both project-level and user-level if present) to understand project rules
 2. Read any documentation files referenced in those rules (coding standards, style guides)
 3. Check if changed code follows the established conventions
 
@@ -36,7 +36,7 @@ Review code for style consistency, convention adherence, and code smells.
 For each finding:
 - Location: file and line reference
 - Issue: what's inconsistent or smelly
-- Convention: what the project convention is (cite GEMINI.md, AGENTS.md, CLAUDE.md, or existing code as evidence)
+- Convention: what the project convention is (cite AGENTS.md, GEMINI.md, or existing code as evidence)
 - Fix: specific suggestion to align with conventions
 
 Report problems only - no positive observations.

@@ -77,11 +77,10 @@ It never creates `.ralphex/`, never re-points an existing symlink, and never tou
 ralphex's own "move completed plan" commit is refused by git for a path through a symlink (`beyond a symbolic link`), so the archived plan is left uncommitted for you to commit with your change — the same outcome as a gitignored `.ralphex/`.
 
 ### Customization
-Prompts and agent definitions use a four-layer override chain:
-1. Project (AGY/Jetski): `.agents/exec-plan/prompts/` and `.agents/exec-plan/agents/`
-2. Project (Antigravity): `.agents/exec-plan/prompts/` and `.agents/exec-plan/agents/`
-3. User: `~/.gemini/config/plugins_data/cc-thingz/prompts/` and `~/.gemini/config/plugins_data/cc-thingz/agents/` (or `~/.gemini/config/plugins_data/cc-thingz/`)
-4. Bundled defaults
+Prompts and agent definitions use a three-layer override chain:
+1. Project: `.agents/exec-plan/prompts/` and `.agents/exec-plan/agents/`
+2. User: `~/.gemini/config/plugins_data/cc-thingz/prompts/` and `~/.gemini/config/plugins_data/cc-thingz/agents/` (or `~/.gemini/config/plugins_data/cc-thingz/`)
+3. Bundled defaults
 
 Nothing is copied anywhere automatically. Installs before planning 3.10.0 did seed `~/.gemini/config/plugins_data/cc-thingz` with
 copies of every bundled prompt and agent — those copies still shadow the bundled defaults and no longer track
