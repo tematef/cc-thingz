@@ -21,5 +21,14 @@
         "timeout": 345600
       }
     ]
+  },
+  "ralphex-plans-link": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python3 scripts/ralphex-plans-link-hook.py",
+        "timeout": 5
+      }
+    ]
   }
 }

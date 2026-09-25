@@ -65,6 +65,17 @@ Set via `userConfig` in plugin.json (prompted at install):
 
 A monorepo sub-project with its own rules (`<repo>/<sub-project>/AGENTS.md`) started in its own folder gets `<repo>/<sub-project>/docs/plans/` and `<repo>/<sub-project>/docs/plans/completed/`; a plain repository gets `<repo>/docs/plans/` from anywhere inside it. In worktree mode exec re-roots the resolved plan path into the worktree.
 
+#### ralphex plans
+
+The external ralphex tool's `ralphex-planner` skill always saves to `.ralphex/plans/`, and ralphex archives a finished plan into a `completed/` folder next to the plan file. The `ralphex-plans-link` `PreInvocation` hook (`scripts/ralphex-plans-link-hook.py`) routes both into the resolved plans directory without changing ralphex:
+
+- for each workspace, it takes the nearest existing `.ralphex/` at or above the project root (never past the VCS root) and makes `.ralphex/plans` a relative symlink to `<project-root>/docs/plans`;
+- new ralphex plans therefore land in `docs/plans/`, and finished ones in `docs/plans/completed/`.
+
+It never creates `.ralphex/`, never re-points an existing symlink, and never touches a `.ralphex/plans/` directory that already holds files — existing plans stay where they are, and the link appears once that directory is empty or gone. The hook is silent (always `{}`, details on stderr).
+
+ralphex's own "move completed plan" commit is refused by git for a path through a symlink (`beyond a symbolic link`), so the archived plan is left uncommitted for you to commit with your change — the same outcome as a gitignored `.ralphex/`.
+
 ### Customization
 Prompts and agent definitions use a four-layer override chain:
 1. Project (AGY/Jetski): `.agents/exec-plan/prompts/` and `.agents/exec-plan/agents/`
