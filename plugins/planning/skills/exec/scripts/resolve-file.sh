@@ -1,18 +1,17 @@
 #!/bin/bash
-# resolve a file through the four-layer override chain
+# resolve a file through the three-layer override chain
 # usage: resolve-file.sh <relative-path> [data-dir]
 # e.g.: resolve-file.sh prompts/task.md /path/to/plugin/data
 # e.g.: resolve-file.sh agents/quality.txt /path/to/plugin/data
 #
 # data-dir: plugin data directory path, passed from SKILL.md where
 # ~/.gemini/config/plugins_data/cc-thingz is text-substituted by the plugin framework.
-# falls back to $GEMINI_PLUGIN_DATA or $CLAUDE_PLUGIN_DATA env var if not provided as argument.
+# falls back to $GEMINI_PLUGIN_DATA env var if not provided as argument.
 #
 # checks in order:
-#   1. .agents/exec-plan/<path> (project override - AGY/Jetski)
-#   2. .claude/exec-plan/<path> (project override - Claude Code)
-#   3. <data-dir>/<path> (user override)
-#   4. bundled default (derived from script location)
+#   1. .agents/exec-plan/<path> (project override)
+#   2. <data-dir>/<path> (user override)
+#   3. bundled default (derived from script location)
 #
 # outputs the file content to stdout
 
@@ -25,7 +24,7 @@ if [ -z "$path" ]; then
 fi
 
 # use argument if provided, fall back to env var
-data_dir="${2:-${GEMINI_PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-}}}"
+data_dir="${2:-${GEMINI_PLUGIN_DATA:-}}"
 
 # derive skill root from script location
 # script is at <skill-root>/scripts/resolve-file.sh
@@ -34,8 +33,6 @@ SKILL_ROOT="$(dirname "$SCRIPT_DIR")"
 
 if [ -f ".agents/exec-plan/$path" ]; then
     cat ".agents/exec-plan/$path"
-elif [ -f ".claude/exec-plan/$path" ]; then
-    cat ".claude/exec-plan/$path"
 elif [ -n "$data_dir" ] && [ -f "$data_dir/$path" ]; then
     cat "$data_dir/$path"
 elif [ -f "$SKILL_ROOT/references/$path" ]; then

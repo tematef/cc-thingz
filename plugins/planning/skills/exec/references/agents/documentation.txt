@@ -21,7 +21,7 @@ Skip:
 
 ## GEMINI.md / AGENTS.md (AI Knowledge Base)
 
-Check if changes require GEMINI.md, AGENTS.md (or CLAUDE.md) updates:
+Check if changes require AGENTS.md or GEMINI.md updates:
 
 Must document:
 - New architectural patterns discovered/established

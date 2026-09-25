@@ -288,7 +288,7 @@ When stats summary is done (or skipped on failure):
 - If a subagent fails or leaves broken code, re-run the loop — do NOT investigate or fix it yourself
 - NEVER dismiss findings as "pre-existing", "not from changes", or "architectural" — ALL findings are actionable
 - NEVER summarize or filter agent findings — pass the full output to the fixer agent verbatim
-- All prompt and agent files MUST be resolved through the four-layer override chain before use
+- All prompt and agent files MUST be resolved through the three-layer override chain before use
 - All `invoke_subagent` calls must use `TypeName: "self"` — agent files provide the specialized prompt
 - After reading a prompt file, substitute all placeholders before passing to subagent (see Placeholder Substitution)
 - Subagents run with NO human available — they must NEVER ask the user a question (no ask_question, no pausing for input). They decide judgment calls the plan does not settle from the project's lint rules, GEMINI.md / AGENTS.md, and code conventions, and log each as a `[decision]`/`[deviation]` line for the completion report
