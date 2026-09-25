@@ -99,6 +99,7 @@ def main() -> int:
     total_replayed = 0
     subagent_asks = []
     main_asks = []
+    dangerous_not_forced = []
     for cid in sub_ids + replay_parent_ids:
         tpath = os.path.join(brain, cid, ".system_generated", "logs", "transcript.jsonl")
         if not os.path.exists(tpath):
@@ -107,38 +108,49 @@ def main() -> int:
             for line in f:
                 if "tool_calls" not in line:
                     continue
+                # only a malformed transcript line is skipped; hook errors and
+                # assertion failures below must fail the test
                 try:
                     obj = json.loads(line)
-                    for tc in obj.get("tool_calls", []):
-                        tname = tc.get("name") or tc.get("tool_name") or ""
-                        targs = dict(tc.get("args") or tc.get("arguments") or {})
-                        for k, v in list(targs.items()):
-                            if isinstance(v, str) and v.startswith('"') and v.endswith('"'):
-                                try:
-                                    targs[k] = json.loads(v)
-                                except Exception:
-                                    targs[k] = v[1:-1]
-                        payload = {
-                            "conversationId": cid,
-                            "transcriptPath": tpath,
-                            "workspacePaths": workspaces,
-                            "toolCall": {"name": tname, "args": targs},
-                        }
-                        res = hook.evaluate_hook(payload)
-                        total_replayed += 1
-                        cmd = str(targs.get("CommandLine") or targs.get("TargetFile") or "")
-                        # Skip intentional git push commands (which SHOULD be force_ask in Tier 3)
-                        if hook.is_dangerous_command(cmd):
-                            assert res.get("decision") == "force_ask"
-                            continue
-                        if res.get("decision") != "allow":
-                            if cid in sub_ids:
-                                subagent_asks.append((cid[:8], tname, cmd[:100], res))
-                            else:
-                                main_asks.append((cid[:8], tname, cmd[:100], res))
-                except Exception:
-                    pass
+                except ValueError:
+                    continue
+                if not isinstance(obj, dict):
+                    continue
+                for tc in obj.get("tool_calls") or []:
+                    if not isinstance(tc, dict):
+                        continue
+                    tname = tc.get("name") or tc.get("tool_name") or ""
+                    targs = dict(tc.get("args") or tc.get("arguments") or {})
+                    for k, v in list(targs.items()):
+                        if isinstance(v, str) and v.startswith('"') and v.endswith('"'):
+                            try:
+                                targs[k] = json.loads(v)
+                            except ValueError:
+                                targs[k] = v[1:-1]
+                    payload = {
+                        "conversationId": cid,
+                        "transcriptPath": tpath,
+                        "workspacePaths": workspaces,
+                        "toolCall": {"name": tname, "args": targs},
+                    }
+                    res = hook.evaluate_hook(payload)
+                    total_replayed += 1
+                    cmd = str(targs.get("CommandLine") or targs.get("TargetFile") or "")
+                    # dangerous commands (e.g. git push) must be force_ask even in subagents
+                    if hook.is_dangerous_command(cmd):
+                        if res.get("decision") != "force_ask":
+                            dangerous_not_forced.append((cid[:8], tname, cmd[:100], res))
+                        continue
+                    if res.get("decision") != "allow":
+                        if cid in sub_ids:
+                            subagent_asks.append((cid[:8], tname, cmd[:100], res))
+                        else:
+                            main_asks.append((cid[:8], tname, cmd[:100], res))
 
+    assert not dangerous_not_forced, (
+        f"Expected every dangerous command to be force_ask, got {len(dangerous_not_forced)}:\n"
+        + "\n".join(str(x) for x in dangerous_not_forced[:10])
+    )
     assert len(subagent_asks) == 0, (
         f"Expected 0 subagent tool calls to ask for permission, got {len(subagent_asks)}:\n"
         + "\n".join(str(x) for x in subagent_asks[:10])
