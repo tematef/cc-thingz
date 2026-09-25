@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Project rules for Google Antigravity (AGY) and Jetski agents working in this repository.
-This is the only rules file here — do not add `GEMINI.md`, `CLAUDE.md` or `.agents/AGENTS.md`.
+This file (`.agents/AGENTS.md`, discovered by AGY in the `.agents/` directory) is the only rules file here — do not add a root `AGENTS.md`, `GEMINI.md` or `CLAUDE.md`.
 
 ## Purpose
 
@@ -58,7 +58,8 @@ Skills, prompts and scripts use AGY tool names, never Claude Code ones:
 - AGY config lives in `~/.gemini/config/`; `./install.sh` registers the plugins in `~/.gemini/config/plugins.json` (plugins are linked, so edits here take effect immediately).
 - Per-user plugin data: `~/.gemini/config/plugins_data/cc-thingz/`.
 - Project-level custom rules: `.agents/<name>-rules.md` (e.g. `.agents/planning-rules.md`, `.agents/brainstorm-rules.md`); they take precedence over the user-level copy in the data directory.
-- All project agent data lives under `.agents/`; only `AGENTS.md` stays at the root, where AGY discovers it:
+- All project agent data lives under `.agents/`; the root holds only the `.revmux` symlink below:
+  - `.agents/AGENTS.md` — this rules file;
   - `.agents/skills/` — project-only skills (`cc-thingz-sync`);
   - `.agents/<name>-rules.md` — project rules for the planning and brainstorm plugins;
   - `.agents/revmux/profile.md` — the revmux review profile (checked in); `.agents/revmux/tasks/` — review round archives (gitignored).

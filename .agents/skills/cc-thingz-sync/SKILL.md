@@ -44,7 +44,7 @@ If conflicts occur:
 - **Do NOT overwrite AGY/Jetski adaptations**:
   - `plugin.json` in each plugin directory must remain.
   - `hooks.json` must remain at the root of `plugins/<name>/hooks.json` (not under `hooks/`).
-  - `AGENTS.md` (the only rules file), `.agents/skills/` and `install.sh` must be preserved. Never let upstream reintroduce `GEMINI.md`, `.agents/AGENTS.md`, `.agents/CONTEXT.md` or the `.agent` symlink.
+  - `.agents/AGENTS.md` (the only rules file), `.agents/skills/` and `install.sh` must be preserved. Never let upstream reintroduce a root `AGENTS.md` or `GEMINI.md`, `.agents/CONTEXT.md` or the `.agent` symlink.
   - `.revmux` is a symlink to `.agents/revmux`, which holds this fork's review profile. If upstream changes `.revmux/profile.md` (upstream's own profile), discard that change and restore the symlink:
     ```bash
     rm -rf .revmux && ln -s .agents/revmux .revmux && git add .revmux .agents/revmux/profile.md

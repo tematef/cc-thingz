@@ -26,7 +26,7 @@ This repository is a fork of [umputun/cc-thingz](https://github.com/umputun/cc-t
 | Tools in skills       | `Agent`, `Bash`, `AskUserQuestion`, `Read`/`Write`/`Edit` | `invoke_subagent`, `run_command`, `ask_question`, `view_file`/`write_to_file`/`replace_file_content`           |
 | Project overrides     | `.claude/`                                               | `.agents/`                                                                                                      |
 | User data             | `$CLAUDE_PLUGIN_DATA`                                    | `~/.gemini/config/plugins_data/cc-thingz/`                                                                      |
-| Rules file            | `CLAUDE.md`                                              | `AGENTS.md`                                                                                                     |
+| Rules file            | `CLAUDE.md`                                              | `.agents/AGENTS.md`                                                                                             |
 | Plans and backlog     | repository-level `docs/plans/`, `docs/backlog/`          | resolved per project, so monorepo sub-projects keep their own; closed backlog items are archived               |
 | ralphex               | —                                                        | ralphex plans are routed into the project's `docs/plans/` by a hook                                            |
 | Command approvals     | —                                                        | `autonomous-exec-guard` auto-approves safe tool calls and all calls from subagents and `/exec` runs             |
@@ -234,8 +234,8 @@ Ask `/planning:make` or `brainstorm` to show, add or clear rules at either level
 
 ```text
 .
-├── AGENTS.md                     # rules for agents working in this repo (the only rules file)
 ├── .agents/                      # all project agent data
+│   ├── AGENTS.md                 # rules for agents working in this repo (the only rules file)
 │   ├── skills/cc-thingz-sync/    # project-only skill: upstream sync
 │   └── revmux/                   # profile.md (review profile); tasks/ (round archives, gitignored)
 ├── .revmux -> .agents/revmux     # symlink: revmux reads only ./.revmux
