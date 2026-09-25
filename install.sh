@@ -214,33 +214,42 @@ register_plugins() {
         fi
     done
 
-    # Register autonomous-exec-guard globally in ~/.gemini/config/hooks.json
-    if command -v python3 >/dev/null 2>&1; then
-        python3 -c '
-import json, os, shutil, sys
-hooks_path, hook_script = sys.argv[1], sys.argv[2]
-data = {}
-if os.path.exists(hooks_path):
-    try:
-        with open(hooks_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except Exception as exc:
-        bak_path = hooks_path + ".bak"
-        shutil.copy2(hooks_path, bak_path)
-        print(f"Warning: {hooks_path} could not be parsed ({exc}); backed up to {bak_path} and skipped overwrite.", file=sys.stderr)
-        sys.exit(0)
-data["autonomous-exec-guard"] = {
-    "PreToolUse": [{
-        "matcher": "*",
-        "hooks": [{"type": "command", "command": f"python3 \"{hook_script}\"", "timeout": 10}]
-    }]
-}
-with open(hooks_path, "w", encoding="utf-8") as f:
-    json.dump(data, f, indent=2)
-' "$CONFIG_DIR/hooks.json" "$PLUGIN_DIR/planning/scripts/autonomous-exec-hook.py"
+    # Prune links left behind by plugins removed from this repository
+    for link in "$CONFIG_DIR/plugins"/*; do
+        [ -L "$link" ] || continue
+        [ -e "$link" ] && continue
+        case "$(readlink "$link")" in
+        "$PLUGIN_DIR"/*)
+            rm -f "$link"
+            echo "Removed dangling plugin link: $link"
+            ;;
+        esac
+    done
+
+    # The planning plugin's hooks.json registers autonomous-exec-guard. Older installs also
+    # wrote a copy into the global hooks.json, and AGY runs both, so every tool call was
+    # evaluated twice. Remove that copy; other global hooks are left untouched.
+    if [ -f "$CONFIG_DIR/hooks.json" ] && command -v python3 >/dev/null 2>&1; then
+        python3 - "$CONFIG_DIR/hooks.json" <<'PY'
+import json, sys
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+except Exception as exc:
+    print(f"Warning: {path} could not be parsed ({exc}); left unchanged.", file=sys.stderr)
+    sys.exit(0)
+entry = data.get("autonomous-exec-guard") if isinstance(data, dict) else None
+if entry is not None and "autonomous-exec-hook.py" in json.dumps(entry):
+    del data["autonomous-exec-guard"]
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+    print(f"Removed duplicate autonomous-exec-guard from {path} (the planning plugin registers it).")
+PY
     fi
 
-    echo "Successfully registered cc-thingz plugins in $CONFIG_FILE, linked into $CONFIG_DIR/plugins/, and updated $CONFIG_DIR/hooks.json"
+    echo "Successfully registered cc-thingz plugins in $CONFIG_FILE and linked them into $CONFIG_DIR/plugins/"
 }
 
 # Parse command line options
