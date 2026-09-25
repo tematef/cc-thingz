@@ -235,7 +235,10 @@ Ask `/planning:make` or `brainstorm` to show, add or clear rules at either level
 ```text
 .
 ├── AGENTS.md                     # rules for agents working in this repo (the only rules file)
-├── .agents/skills/cc-thingz-sync # project-only skill: upstream sync
+├── .agents/                      # all project agent data
+│   ├── skills/cc-thingz-sync/    # project-only skill: upstream sync
+│   └── revmux/                   # profile.md (review profile); tasks/ (round archives, gitignored)
+├── .revmux -> .agents/revmux     # symlink: revmux reads only ./.revmux
 ├── install.sh                    # registers and links the plugins
 ├── plugins/
 │   ├── brainstorm/
