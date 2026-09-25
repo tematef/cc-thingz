@@ -54,25 +54,24 @@ Set via `userConfig` in plugin.json (prompted at install):
 | `review_iterations` | `5` | max fix-and-recheck cycles |
 | `external_review_iterations` | `10` | max external review iterations |
 | `finalize_enabled` | `true` | run rebase + squash phase |
-| `plans_dir` | `docs/plans` | plans directory; relative to the project root, absolute used as-is |
 
 ### Where plans live
 `scripts/resolve-project-dir.sh docs/plans` is the single source for the plans directory; make, exec and plan-review all call it from the workspace directory. The backlog skill ships a byte-identical copy and resolves `docs/backlog` the same way.
 
 - **Project root** — the nearest directory, walking up from the working directory and never past the VCS root, that holds `AGENTS.md`, `GEMINI.md`, `.agents/` or an existing plans directory. No match: the VCS root. Outside a VCS: the working directory.
-- **Plans** — `<project-root>/docs/plans/`, or `plans_dir` resolved against the project root.
+- **Plans** — `<project-root>/docs/plans/`. There is no setting to move it.
 - **Completed plans** — `completed/` next to the plan (`move-plan.sh`), so they follow the same root.
 
 A monorepo sub-project with its own rules (`<repo>/<sub-project>/AGENTS.md`) started in its own folder gets `<repo>/<sub-project>/docs/plans/` and `<repo>/<sub-project>/docs/plans/completed/`; a plain repository gets `<repo>/docs/plans/` from anywhere inside it. In worktree mode exec re-roots the resolved plan path into the worktree.
 
 #### ralphex plans
 
-The external ralphex tool's `ralphex-planner` skill always saves to `.ralphex/plans/`, and ralphex archives a finished plan into a `completed/` folder next to the plan file. The `ralphex-plans-link` `PreInvocation` hook (`scripts/ralphex-plans-link-hook.py`) routes both into the resolved plans directory without changing ralphex:
+The external ralphex tool's `ralphex-planner` skill always saves to `.ralphex/plans/`, and ralphex archives a finished plan into a `completed/` folder next to the plan file. The `ralphex-plans-link` `PreInvocation` hook (`scripts/ralphex-plans-link-hook.py`) routes both into `<project-root>/docs/plans/` without changing ralphex:
 
 - for each workspace, it takes the nearest existing `.ralphex/` at or above the project root (never past the VCS root) and makes `.ralphex/plans` a relative symlink to `<project-root>/docs/plans`;
 - new ralphex plans therefore land in `docs/plans/`, and finished ones in `docs/plans/completed/`.
 
-It never creates `.ralphex/`, never re-points an existing symlink, and never touches a `.ralphex/plans/` directory that already holds files — existing plans stay where they are, and the link appears once that directory is empty or gone. The hook is silent (always `{}`, details on stderr).
+It never creates `.ralphex/`, never re-points an existing symlink, and never touches a `.ralphex/plans/` directory that already holds files — existing plans stay where they are, and the link appears once that directory is empty or gone. Because the link is never re-pointed, a `.ralphex/` shared by several projects (one at the repo root above sub-projects that have their own `AGENTS.md`) stays linked to the first project whose session reached it; ralphex plans from the other projects land there too. Give each sub-project its own `.ralphex/`, or remove the link to re-route it. The hook is silent (always `{}`, details on stderr).
 
 ralphex's own "move completed plan" commit is refused by git for a path through a symlink (`beyond a symbolic link`), so the archived plan is left uncommitted for you to commit with your change — the same outcome as a gitignored `.ralphex/`.
 

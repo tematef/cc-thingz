@@ -121,7 +121,7 @@ Skills activate from natural-language triggers or explicitly as `/<plugin>:<skil
 | `plan-annotate` (hook)                | end of a turn that changed `implementation_plan.md` | See [Hooks](#hooks).                                                                                                                                                                               |
 | `ralphex-plans-link` (hook)           | start of every turn                       | See [Hooks](#hooks).                                                                                                                                                                                         |
 
-Configuration keys (`plans_dir`, review toggles, external review command, finalize) and prompt overrides are documented in [plugins/planning/references/usage.md](plugins/planning/references/usage.md). Interactive plan review uses `revdiff` when installed and falls back to `$EDITOR` in a terminal overlay; set `PLANNING_DISABLE_REVDIFF=1` to skip it.
+Configuration keys (review toggles, external review command, finalize) and prompt overrides are documented in [plugins/planning/references/usage.md](plugins/planning/references/usage.md). Interactive plan review uses `revdiff` when installed and falls back to `$EDITOR` in a terminal overlay; set `PLANNING_DISABLE_REVDIFF=1` to skip it.
 
 ### review
 
@@ -201,6 +201,7 @@ A monorepo sub-project with its own `AGENTS.md` therefore keeps its own plans an
 The external [ralphex](https://github.com/umputun/ralphex) tool's `ralphex-planner` skill always saves to `.ralphex/plans/`, and ralphex archives a finished plan into `completed/` next to it. The `ralphex-plans-link` hook makes the nearest existing `.ralphex/plans` a relative symlink to `<project>/docs/plans`, so ralphex plans follow the same layout — with no change to ralphex or its skills.
 
 - It never creates `.ralphex/`, never re-points an existing link, and never touches a `.ralphex/plans/` that already holds files. Existing plans stay where they are; the link appears once that directory is empty or gone.
+- A `.ralphex/` shared by several projects (one at the repo root above sub-projects with their own `AGENTS.md`) therefore stays linked to the first project that reached it. Give each sub-project its own `.ralphex/`, or delete the link to re-route it.
 - Git refuses to stage a path through a symlink, so ralphex's own "move completed plan" commit does not happen; the archived plan stays in `docs/plans/completed/` for you to commit with your change.
 
 ## Custom rules

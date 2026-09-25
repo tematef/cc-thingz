@@ -15,11 +15,14 @@ For every entry in the payload's `workspacePaths` (the payload has no cwd):
   1. skip unless the workspace is inside a git or hg repository;
   2. skip unless a `.ralphex/` directory exists between the workspace and the
      VCS root; `.ralphex/` is never created;
-  3. resolve `<project>/docs/plans` exactly as /planning:make does;
+  3. resolve `<project>/docs/plans` with the shared `resolve-project-dir.sh`
+     (the same project root /planning:make uses; no override is applied);
   4. take the nearest `.ralphex/` at or above that project, up to the VCS root;
   5. create the link only when `.ralphex/plans` is missing or an empty
      directory. An existing symlink (wherever it points) and a directory that
-     already holds files are left untouched.
+     already holds files are left untouched. A `.ralphex/` shared by several
+     projects (a repo-root one above sub-projects with their own AGENTS.md)
+     therefore stays linked to the first project that reached it.
 
 The hook is silent: it always prints `{}` and exits 0. What it did or skipped
 goes to stderr only. Run with `--test` for the embedded unit tests.
