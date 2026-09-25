@@ -44,7 +44,8 @@ cd ~/projects/cc-thingz
 `install.sh`:
 
 - registers `<repo>/plugins` in `~/.gemini/config/plugins.json` and links each plugin into `~/.gemini/config/plugins/`;
-- registers `autonomous-exec-guard` in the global `~/.gemini/config/hooks.json`.
+- removes links in `~/.gemini/config/plugins/` that point at plugins no longer in the repository;
+- removes the `autonomous-exec-guard` copy that older versions wrote into the global `~/.gemini/config/hooks.json` (the planning plugin registers it; with both present every tool call was checked twice). Other global hooks are left untouched.
 
 Because the plugins are linked rather than copied, **pulling or editing the repository updates the installed plugins immediately** — there is no separate update step.
 
@@ -234,7 +235,7 @@ Ask `/planning:make` or `brainstorm` to show, add or clear rules at either level
 .
 ├── AGENTS.md                     # rules for agents working in this repo (the only rules file)
 ├── .agents/skills/cc-thingz-sync # project-only skill: upstream sync
-├── install.sh                    # registers the plugins and the global guard hook
+├── install.sh                    # registers and links the plugins
 ├── plugins/
 │   ├── brainstorm/
 │   ├── planning/                 # commands/, skills/exec/, agents/, scripts/, hooks.json
@@ -257,6 +258,17 @@ for t in tests/test-*.sh; do bash "$t" || echo "FAIL: $t"; done
 python3 plugins/planning/scripts/autonomous-exec-hook.py --test
 python3 plugins/planning/scripts/ralphex-plans-link-hook.py --test
 python3 .github/scripts/check-frontmatter.py .          # needs PyYAML
+```
+
+`tests/test-autonomous-exec-replay.py` (run by `test-autonomous-exec-hook.sh`) replays real transcripts through the guard. The conversation IDs are machine-specific, so they live outside the repository in `~/.gemini/config/plugins_data/cc-thingz/replay-conversations.json` (override with `CC_THINGZ_REPLAY_CONFIG`); without that file the replay is skipped:
+
+```json
+{
+  "workspacePaths": ["/abs/path/to/workspace"],
+  "subagents": ["<subagent conversation id>"],
+  "parents": ["<interactive conversation id that must not be classified as a subagent>"],
+  "replayParents": ["<interactive conversation id whose tool calls are replayed too>"]
+}
 ```
 
 ## Syncing with upstream
