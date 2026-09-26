@@ -221,3 +221,48 @@ Write documentation covering:
 Run `skill-audit.py` against the current project and user setup to produce the first audit report. Save the report to `reports/audit-20260921.md`. Review findings and note actionable items (duplicates to remove, heavy skills to trim).
 
 - [x] complete
+
+---
+
+## Code Review & Hardening (2026-09-21)
+
+All 33 findings (5 Critical, 20 Major, 8 Minor) identified during code review were verified and fixed:
+
+### Critical Fixes
+1. **`skill-audit.py`**: Fixed fake test tautology where `report mentions heavy flag` used a vacuous `or all(s.size_bytes <= 10_240)` check. Added mock skill with 12 KB payload to genuinely verify the heavy warning flag.
+2. **`run-bench.sh`**: Added automated `--test` suite testing 7 core runner functions (argument parsing, label sanitization, base64 decoding, timestamp verification, TSV extraction, manifest generation, dry-run). Integrated into `tests/test-skill-bench.sh`.
+3. **`autonomous-exec-hook.py`**: Refactored command substitution parsing to replace ad-hoc quoting flags with unified `ShellQuoteTracker`, fixing quote latching bugs (`sub_in_single = not in_single`).
+4. **`autonomous-exec-hook.py`**: Replaced `json.loads` based quote stripping with `unwrap_outer_quotes` to safely unwrap enclosing quotes without mangling multi-argument commands like `'foo' 'bar'`.
+5. **`parse-transcript.py`**: Filtered out `SYSTEM` and `SYSTEM_SDK` steps in `_detect_skills`, added regex word boundary `\b` matching, and added skill path matching for tool call arguments.
+
+### Major Fixes
+6. **`skill-audit.py`**: Prevented duplicate indexing of symlinked directories (`.agent` -> `.agents`) via canonical path tracking with `.resolve()`.
+7. **`skill-audit.py`**: Handled unexpanded tildes in `--project` and `--user-home` via `.expanduser().resolve()`.
+8. **`parse-transcript.py`**: Promoted `SetSummary` methods to public and eliminated redundant token calculation logic.
+9. **`parse-transcript.py`**: Refactored `generate_comparison_report` to utilize `SetSummary` methods directly, removing duplicate logic.
+10. **`parse-transcript.py`**: Handled `source: "MODEL"` steps with `type: "GENERIC"` gracefully without raising `KeyError`.
+11. **`parse-transcript.py`**: Fixed wall-clock time calculation to preserve valid zero-duration transcripts (`timedelta(0)`).
+12. **`parse-transcript.py`**: Unmasked test assertions in Test 8, validating exact token calculations and percentage deltas.
+13. **`parse-transcript.py`**: Replaced loose containment tests with exact skill list and set equality assertions.
+14. **`run-bench.sh`**: Replaced repeated 5x per-prompt python invocations with single-pass TSV prompt extraction (`extract_prompts_tsv`).
+15. **`run-bench.sh`**: Fixed race condition in `detect_new_conv` by verifying candidate transcript directory timestamp against benchmark start time.
+16. **`run-bench.sh`**: Archived transcripts under unique `${p_id}_${conv_id}` directories to avoid collisions across multi-turn prompt executions.
+17. **`run-bench.sh`**: Forwarded `expected_skills` into `results.jsonl` and `manifest.json`.
+18. **`benchmark-prompts.json`**: Replaced destructive `planning-exec-trigger` prompt with a non-mutating query targeting `exec` skill routing.
+19. **`autonomous-exec-hook.py`**: Supported `fd --exec=<cmd>` argument syntax by properly extracting the command token.
+20. **`autonomous-exec-hook.py`**: Updated `is_anchored_plugin_script` pattern to match `.agent(?:s)?/`.
+21. **`autonomous-exec-hook.py`**: Expanded module docstrings to document safe patterns (`find -exec`, `fd -x`, `plugins_data/`, `$()`).
+22. **`README.md`**: Updated `autonomous-exec-guard` documentation to reflect Tier 1 subshell and command substitution behavior.
+23. **`README.md`**: Added `skill-bench` entry to Plugins summary table and added `### skill-bench` section with complete workflows.
+24. **`AGENTS.md`**: Added `tests/test-skill-bench.sh` and individual skill-bench test commands to Testing guidelines.
+25. **`GEMINI.md`**: Added skill-bench test commands to project testing documentation.
+
+### Minor Fixes
+26. **`.agents/CONTEXT.md`**: Added `autonomous-exec-guard` and `### 8. Skill Efficiency Benchmarking (skill-bench)` architecture documentation.
+27. **`skill-bench/README.md`**: Fixed project skills tier naming in documentation.
+28. **`skill-bench/README.md`**: Corrected leaderboard count to top 5 skills.
+29. **`skill-bench/README.md`**: Aligned comparison report heading with `parse-transcript.py` output format.
+30. **`run-bench.sh`**: Fixed quote nesting and escaping in runner script generation.
+31. **`run-bench.sh`**: Added cross-platform base64 decode helper (`decode_b64`) supporting GNU and macOS flags.
+32. **`tests/test-skill-bench.sh`**: Created executable shell test runner integrating `skill-bench` unit tests into repository test suite.
+33. **`parse-transcript.py`**: Added Test 14 verifying empty transcript handling and edge-case resilience.
