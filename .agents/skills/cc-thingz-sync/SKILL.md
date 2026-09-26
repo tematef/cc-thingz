@@ -44,18 +44,30 @@ If conflicts occur:
 - **Do NOT overwrite AGY/Jetski adaptations**:
   - `plugin.json` in each plugin directory must remain.
   - `hooks.json` must remain at the root of `plugins/<name>/hooks.json` (not under `hooks/`).
-  - `.agents/` context files (`AGENTS.md`, `CONTEXT.md`) and `install.sh` must be preserved.
-  - Hook implementations (`autonomous-exec-hook.py`, `plan-review-hook.py`, `skill-forced-eval-hook.sh`) must maintain AGY `PreToolUse` / `Stop` / `PreInvocation` JSON contracts.
+  - `.agents/AGENTS.md` (the only rules file), `.agents/skills/` and `install.sh` must be preserved. Never let upstream reintroduce a root `AGENTS.md` or `GEMINI.md`, `.agents/CONTEXT.md` or the `.agent` symlink.
+  - `.revmux/profile.md` is this fork's review profile; upstream's file at the same path describes upstream's project. During a rebase conflict on `.revmux/profile.md`, keep the fork's copy (`--theirs` during rebase is the commit being replayed) and stage it without committing:
+    ```bash
+    git checkout --theirs -- .revmux/profile.md && git add .revmux/profile.md
+    ```
+    After the rebase finishes, verify `.revmux/profile.md` still starts with `# Project profile: cc-thingz (AGY/Jetski fork)`; if an upstream commit overwrote it cleanly without a conflict, restore it from `ORIG_HEAD`:
+    ```bash
+    git checkout ORIG_HEAD -- .revmux/profile.md && git commit -m "chore: keep the fork's revmux profile"
+    ```
+  - Hook implementations (`autonomous-exec-hook.py`, `plan-review-hook.py`, `ralphex-plans-link-hook.py`, `skill-forced-eval-hook.sh`) must maintain AGY `PreToolUse` / `Stop` / `PreInvocation` JSON contracts.
   - Tool calls in `SKILL.md` files must use AGY tools (`invoke_subagent`, `run_command`, `ask_question`, etc.) rather than Claude Code tools (`Agent`, `Bash`, `AskUserQuestion`, etc.).
-- **Always discard excluded upstream plugins, skills, and CI workflows** (`plugins/release-tools`, `plugins/review/skills/git-review`, `plugins/review/skills/pr`, `tests/test-release-tools.sh`, `.github/workflows`) if upstream commits modify or reintroduce them:
+- **Always discard excluded upstream plugins, skills, CI workflows and Claude Code packaging** if upstream commits modify or reintroduce them:
   ```bash
   git rm -rf --ignore-unmatch \
     plugins/release-tools \
     plugins/review/skills/git-review \
     plugins/review/skills/pr \
     tests/test-release-tools.sh \
-    .github/workflows
+    .github/workflows \
+    CLAUDE.md \
+    .claude-plugin \
+    'plugins/*/.claude-plugin'
   ```
+- Upstream `.claude/` project-override lookups are not used in this fork: when a merged script or test adds a `.claude/<file>` fallback, drop it and keep only `.agents/<file>`.
 - If assistance is needed to resolve a conflict, use `ask_question` to confirm the resolution with the user.
 
 ### 4. Audit for Legacy Tool Leaks

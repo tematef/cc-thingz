@@ -10,7 +10,7 @@ Execute plan file tasks sequentially, each in an isolated subagent.
 
 ## Arguments
 
-- `$ARGUMENTS` — path to plan file (optional; if omitted, ask user to pick from `plans_dir` userConfig directory, default: `docs/plans/`)
+- `$ARGUMENTS` — path to plan file (optional; if omitted, ask user to pick from the resolved plans directory — see Step 1)
 
 ## File Resolution
 
@@ -41,7 +41,13 @@ If the output is non-empty, store it as the resolved custom rules content. When 
 
 ### Step 1. Resolve plan file
 
-If `$ARGUMENTS` contains a file path, use it. Otherwise, list `.md` files in the `plans_dir` userConfig directory (default: `docs/plans/`), excluding `completed/`. If exactly one plan found, use it automatically. If multiple found, ask the user to pick one using ask_question.
+If `$ARGUMENTS` contains a file path, use it. Otherwise, resolve the plans directory — run from the workspace directory the session was started in, never a hand-picked one:
+
+```bash
+bash ~/.gemini/config/plugins/planning/scripts/resolve-project-dir.sh docs/plans '${user_config.plans_dir}'
+```
+
+It prints an absolute path (`<project-root>/docs/plans` by default; the project root is the nearest directory holding `AGENTS.md`, `GEMINI.md`, `.agents/` or an existing plans directory, bounded by the VCS root). List `.md` files in that directory, excluding `completed/`. If exactly one plan found, use it automatically. If multiple found, ask the user to pick one using ask_question.
 
 Read the plan file. Count total Task sections (`### Task N:` or `### Iteration N:`) to know the scope.
 
@@ -96,6 +102,7 @@ In BOTH cases: invoke the ask_question tool **now**, do not generate text first,
 5. **This means Step 4 (create-branch.sh) is SKIPPED** — the branch already exists inside the worktree. Running create-branch.sh here would `git checkout -b` in the main tree and break isolation.
 6. **Isolation guard**: verify the main tree is untouched — `git -C "$main_tree" branch --show-current` MUST still equal `main_branch`. If it changed, STOP and report the isolation breach instead of continuing.
 7. Every later step (task execution, reviews, finalize, stats, the plan move) runs inside the worktree; use `<name>` wherever a branch name is needed. At completion, report `worktree_path` and `<name>` so the user can review and merge.
+8. **Re-root the plan path.** Step 1 resolved it against the main tree, so from here on use `PLAN_FILE_PATH = <worktree_path>/<plan path relative to main_tree>` — e.g. `<main_tree>/<sub-project>/docs/plans/x.md` becomes `<worktree_path>/<sub-project>/docs/plans/x.md`. This keeps a sub-project's plan, and its `completed/` move, inside the same sub-project of the worktree. Passing the main-tree path on would edit and move the plan in the main checkout, which is an isolation breach.
 
 **If the user picks "In-place" or "Stay here"** — set `worktree_mode = false` and proceed normally; Step 4 creates the branch in this working directory.
 
@@ -266,7 +273,7 @@ This step is best-effort — if the stats agent fails or the session log path ca
 When stats summary is done (or skipped on failure):
 - **Report autonomous decisions and deviations to the user.** The run had no human to answer questions, so subagents decided judgment calls themselves and logged them. Collect every such entry from the progress file — `grep -E '^(\[[^]]*\] )?\[(decision|deviation)\]' <progress-file>` — and present them in a dedicated section titled **"Decisions made autonomously / Deviations from the plan"**, one bullet per entry with its stated reason, so the user learns every question the run answered on its own and why. If there are none, state "no autonomous decisions or deviations were logged." Do this regardless of whether finalize ran — finalize is skipped on hg or when disabled, so this is the guaranteed place the user always gets the report.
 - Log completion to progress file: `bash ~/.gemini/config/plugins/planning/skills/exec/scripts/append-progress.sh <progress-file> "completed"`
-- Move the finished plan into its `completed/` subdirectory and commit it (best-effort): `bash ~/.gemini/config/plugins/planning/skills/exec/scripts/move-plan.sh <plan-file-path>`. The script is a no-op when the plan is already under `completed/` or missing, derives the target as a `completed/` sibling of the plan's directory (so it respects a custom `plans_dir` and worktrees), and commits the move VCS-aware (git/hg). Do NOT push. If the script exits non-zero, report the failure but do not block completion.
+- Move the finished plan into its `completed/` subdirectory and commit it (best-effort): `bash ~/.gemini/config/plugins/planning/skills/exec/scripts/move-plan.sh <plan-file-path>`. The script is a no-op when the plan is already under `completed/` or missing, derives the target as a `completed/` sibling of the plan's directory (so it follows the plan's own directory, including in a worktree), and commits the move VCS-aware (git/hg). Do NOT push. If the script exits non-zero, report the failure but do not block completion.
 - Report the final line "All N tasks completed, reviews passed, branch finalized". Append ", plan moved to completed/" ONLY when move-plan.sh actually moved the file (it printed `moved plan to ...`); omit the suffix when the move was a no-op (already under `completed/` or missing) or exited non-zero
 
 ## Key rules
@@ -281,7 +288,7 @@ When stats summary is done (or skipped on failure):
 - If a subagent fails or leaves broken code, re-run the loop — do NOT investigate or fix it yourself
 - NEVER dismiss findings as "pre-existing", "not from changes", or "architectural" — ALL findings are actionable
 - NEVER summarize or filter agent findings — pass the full output to the fixer agent verbatim
-- All prompt and agent files MUST be resolved through the four-layer override chain before use
+- All prompt and agent files MUST be resolved through the three-layer override chain before use
 - All `invoke_subagent` calls must use `TypeName: "self"` — agent files provide the specialized prompt
 - After reading a prompt file, substitute all placeholders before passing to subagent (see Placeholder Substitution)
 - Subagents run with NO human available — they must NEVER ask the user a question (no ask_question, no pausing for input). They decide judgment calls the plan does not settle from the project's lint rules, GEMINI.md / AGENTS.md, and code conventions, and log each as a `[decision]`/`[deviation]` line for the completion report

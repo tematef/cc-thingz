@@ -33,9 +33,9 @@ Review the current conversation history and identify strategic, reusable project
 
 ## Destinations
 
-This skill writes to one of the project instruction files in the project root:
+This skill writes to one of the project instruction files in the project root or its `.agents/` directory (AGY discovers `AGENTS.md` / `GEMINI.md` in both):
 
-- **`GEMINI.md` / `AGENTS.md`** (project memory, committed, team-shared) — the default destination. Detect which file the project already uses: if `GEMINI.md` exists, use it; if `AGENTS.md` exists (or `.agents/AGENTS.md`), use it; if none exist, default to `GEMINI.md`. Use for architecture, conventions, integration patterns, and any other knowledge useful to the whole team.
+- **`GEMINI.md` / `AGENTS.md`** (project memory, committed, team-shared) — the default destination. Detect which file the project already uses: if `GEMINI.md` (or `.agents/GEMINI.md`) exists, use it; if `AGENTS.md` (or `.agents/AGENTS.md`) exists, use it; if none exist, default to `GEMINI.md`. Use for architecture, conventions, integration patterns, and any other knowledge useful to the whole team.
 - **Local overrides** (`GEMINI.local.md` / `AGENTS.local.md` or `.agents/rules/local.md`) — used only when **both** conditions hold:
   1. The local override file already exists in the project.
   2. The discovery describes per-developer / per-checkout state — not just *mentions* something personal, but the knowledge itself is meaningful only to the current developer on this machine. Examples: a tool-loading workaround that depends on this developer's interpreter / runtime setup, a personal alias, a per-checkout env override.
@@ -86,10 +86,10 @@ Ask yourself for each discovery:
 ## Workflow
 
 ### 1. Check for Existing Memory-Placement Guidance
-Before applying the routing rules below, scan the project's root `GEMINI.md`, `AGENTS.md`, any `.agents/rules/*.md` files, and the user's global `~/.gemini/config/` rules for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `GEMINI.md` / `AGENTS.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
+Before applying the routing rules below, scan the project's `GEMINI.md`, `AGENTS.md` (at the root or in `.agents/`), any `.agents/rules/*.md` files, and the user's global `~/.gemini/config/` rules for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `GEMINI.md` / `AGENTS.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
 
 ### 2. Check Existing Memory Content
-Read the current content of project `GEMINI.md`, `AGENTS.md` (if present), local overrides (if present), and global `~/.gemini/config/` rules to avoid duplication — including cross-project entries already captured in user memory.
+Read the current content of project `GEMINI.md`, `AGENTS.md` (root or `.agents/`, if present), local overrides (if present), and global `~/.gemini/config/` rules to avoid duplication — including cross-project entries already captured in user memory.
 
 ### 3. Early Exit if Nothing Found
 If no new strategic knowledge was discovered during this session:
