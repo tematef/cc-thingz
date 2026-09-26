@@ -169,11 +169,11 @@ assert_exit_rc "reviewer failure exit code propagates" 3 \
 echo "== customize-file.sh =="
 
 # copying is opt-in: the bundled file is reachable without any override present.
-# runs in the still-clean temp dir, since resolve-file.sh checks .claude/exec-plan
+# runs in the still-clean temp dir, since resolve-file.sh checks .agents/exec-plan
 # relative to cwd and a developer's own override would otherwise satisfy this
 # keep the `||`: dropping it aborts the suite under `set -e` and loses the summary.
 # compare content rather than non-emptiness, since the fallback value is itself non-empty
-bundled=$(cd "$WORK_DIR" && env -u CLAUDE_PLUGIN_DATA bash "$EXEC_SCRIPTS/resolve-file.sh" prompts/review.md) || bundled="<rc=$?>"
+bundled=$(cd "$WORK_DIR" && env -u GEMINI_PLUGIN_DATA bash "$EXEC_SCRIPTS/resolve-file.sh" prompts/review.md) || bundled="<rc=$?>"
 expected_bundled=$(cat "$REPO_ROOT/plugins/planning/skills/exec/references/prompts/review.md") || expected_bundled="<missing bundled file>"
 if [ "$bundled" = "$expected_bundled" ]; then
     assert_output "bundled default resolves with no override" "bundled content" "bundled content"
@@ -266,7 +266,7 @@ dest=$(cd "$WORK_DIR/slash" && bash "$CUSTOMIZE_SCRIPT" agents/quality.txt "$WOR
 assert_output "trailing slashes stripped from data dir" "$WORK_DIR/slash/data/agents/quality.txt" "$dest"
 
 # and the walk must still stop at the override root: a symlinked component *above* the
-# data dir is a legitimate setup (a symlinked $HOME or ~/.claude), so it must not be
+# data dir is a legitimate setup (a symlinked $HOME or ~/.gemini), so it must not be
 # rejected -- which is what an unnormalized $stop caused
 mkdir -p "$WORK_DIR/slashreal/data"
 ln -s "$WORK_DIR/slashreal" "$WORK_DIR/slashlink"
@@ -283,7 +283,7 @@ else
     assert_output "root data-dir wrote nothing" "absent" "absent"
 fi
 
-# an empty data-dir means ${CLAUDE_PLUGIN_DATA} substituted to nothing; silently
+# an empty data-dir means the data-dir placeholder substituted to nothing; silently
 # writing a project-level copy would not be what the caller asked for
 assert_exit_rc "empty data-dir argument rejected" 1 \
     bash -c "cd '$WORK_DIR' && bash '$CUSTOMIZE_SCRIPT' prompts/finalizer.md ''"
