@@ -557,6 +557,18 @@ def is_safe_segment(
             else:
                 tokens = tokens[1:]
 
+    # Strip leading `timeout` utility and its arguments
+    while tokens and os.path.basename(tokens[0].strip("\"'")) == "timeout":
+        tokens = tokens[1:]
+        while tokens and tokens[0].strip("\"'").startswith("-"):
+            t = tokens[0].strip("\"'")
+            if t in ("-k", "--kill-after", "-s", "--signal") and len(tokens) >= 2:
+                tokens = tokens[2:]
+            else:
+                tokens = tokens[1:]
+        if tokens:
+            tokens = tokens[1:]  # strip duration
+
     if not tokens:
         return True, redir_writes
 
@@ -725,7 +737,7 @@ def is_safe_segment(
             if is_safe_special_target(arg1, safe_vars):
                 return True, True
             if "--test" in [t.strip("\"'") for t in tokens[2:]] and (
-                "plugins/" in arg1 or ".github/" in arg1
+                "plugins/" in arg1 or "plugins_data/" in arg1 or ".github/" in arg1
             ):
                 return True, redir_writes
             if arg1 in ("-c", "-"):
@@ -1095,6 +1107,7 @@ def run_tests() -> int:
         'python3 - <<\'PY\'\nimport re, html\nprint("ok")\nPY',
         'node -p "require(\'/path/to/package.json\').version"',
         'set -e\ncd /path/to/project/.worktrees/presubmit-fixes\n( cd e2e && npm run lint:prettier-write && npm run check-types )',
+        "timeout 10 python3 ~/.gemini/config/plugins_data/cc-thingz/skill-bench/skill-audit.py --test",
     ]
 
     for idx, cmd in enumerate(user_commands, 1):
