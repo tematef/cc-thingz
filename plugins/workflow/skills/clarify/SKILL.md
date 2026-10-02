@@ -159,7 +159,7 @@ When there are multiple valid solutions, use **ask_question** tool to present ch
 
 After user confirms or selects an approach:
 
-1. **Create an implementation plan artifact** (`implementation_plan.md`) or use `/planning:make` for the chosen approach
+1. **Create an implementation plan artifact** (`implementation_plan.md`) or use the make-plan skill for the chosen approach
 2. Plan should reflect the scope assessment from Step 1
 
 **CRITICAL**: Do not attempt to fix issues without planning. Always create an implementation plan for:

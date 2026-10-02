@@ -1,12 +1,15 @@
 # Planning Plugin Usage
 
-The planning plugin has three components: make (plan creation), exec (autonomous execution), and plan-review (quality review agent).
+The planning plugin has three components: make-plan (plan creation skill), exec (autonomous execution skill), and plan-review (quality review agent).
 
-## Make — `/planning:make`
+Upstream ships plan creation as the Claude Code slash command `/planning:make` (`commands/make.md`). AGY plugins do not load a `commands/` directory, so this fork ports it to the `make-plan` skill.
+
+## Make — `make-plan` skill
 
 ### Triggers
-- `/planning:make <description>` — create an implementation plan
-- invoked automatically by brainstorm when user picks "Write plan"
+- "make a plan for <description>", "create a plan", "plan this feature", "/planning:make <description>" — create an implementation plan
+- activated by brainstorm when user picks "Write plan"
+- not AGY's built-in `/plan` mode, which writes the conversation artifact `implementation_plan.md` instead; exec can run either file
 
 ### Workflow
 1. **Step 0** — parses intent (feature, bug fix, refactor, migration) and explores codebase for context
@@ -17,10 +20,10 @@ The planning plugin has three components: make (plan creation), exec (autonomous
 
 ### Examples
 ```
-/planning:make add user authentication
-/planning:make fix the race condition in the connection pool
-/planning:make refactor the middleware stack
-/planning:make add my Go testing rules to user-level planning rules
+make a plan to add user authentication
+make a plan to fix the race condition in the connection pool
+make a plan to refactor the middleware stack
+add my Go testing rules to user-level planning rules
 ```
 
 ### Plan File Structure
@@ -56,7 +59,7 @@ Set via `userConfig` in plugin.json (prompted at install):
 | `finalize_enabled` | `true` | run rebase + squash phase |
 
 ### Where plans live
-`scripts/resolve-project-dir.sh docs/plans` is the single source for the plans directory; make, exec and plan-review all call it from the workspace directory. The backlog skill ships a byte-identical copy and resolves `docs/backlog` the same way.
+`scripts/resolve-project-dir.sh docs/plans` is the single source for the plans directory; make-plan, exec and plan-review all call it from the workspace directory. The backlog skill ships a byte-identical copy and resolves `docs/backlog` the same way.
 
 - **Project root** — the nearest directory, walking up from the working directory and never past the VCS root, that holds `AGENTS.md`, `GEMINI.md`, `.agents/` or an existing plans directory. No match: the VCS root. Outside a VCS: the working directory.
 - **Plans** — `<project-root>/docs/plans/`. There is no setting to move it.
@@ -102,8 +105,9 @@ Subagents in current Antigravity do not have the invoke_subagent tool — they c
 ## Plan-Review — agent
 
 ### Triggers
-- launched by make's "Auto review" option
-- usable as the Prompt for invoke_subagent with TypeName "self", Role "plan-review"
+- launched by make-plan's "Auto review" option (the skill passes `agents/plan-review.md` as the subagent prompt, so it works whether or not AGY registered the agent)
+- registered as the AGY subagent type `plan-review` (markdown agent in `agents/plan-review.md`): ask "review this plan with the plan-review agent"
+- accepts a `docs/plans/*.md` plan or an AGY `implementation_plan.md` artifact
 
 ### What It Checks
 - problem definition and solution correctness
@@ -121,7 +125,7 @@ Structured report with severity-rated findings:
 
 ## Interactive Review
 
-After creating a plan, make offers interactive review via:
+After creating a plan, make-plan offers interactive review via:
 - **revdiff** (if installed) — TUI with syntax highlighting and line-level annotations
 - **plan-annotate.py** (fallback) — opens plan in `$EDITOR` via terminal overlay
 

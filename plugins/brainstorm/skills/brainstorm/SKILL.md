@@ -90,7 +90,7 @@ After design is validated, use ask_question tool:
     "question": "Design looks complete. What's next?",
     "header": "Next step",
     "options": [
-      "Write plan - Create docs/plans/yyyymmdd-<task-name>.md with implementation steps via /planning:make",
+      "Write plan - Create docs/plans/yyyymmdd-<task-name>.md with implementation steps via the make-plan skill",
       "Plan mode - Enter plan mode for structured implementation planning",
       "Start now - Begin implementing directly"
     ],
@@ -99,7 +99,7 @@ After design is validated, use ask_question tool:
 }
 ```
 
-- **Write plan**: invoke `/planning:make` command to create the plan file. Pass brainstorm context (discovered files, selected approach, design decisions) as arguments so the plan command has full context without re-asking questions
+- **Write plan**: activate the **make-plan** skill (read `~/.gemini/config/plugins/planning/skills/make-plan/SKILL.md` with view_file and follow it) to create the plan file. Carry the brainstorm context (discovered files, selected approach, design decisions) into it so make-plan has full context without re-asking questions
 - **Plan mode**: uses write_to_file to create an implementation_plan.md artifact for detailed planning with user approval workflow
 - **Start now**: proceeds directly if design is simple enough
 

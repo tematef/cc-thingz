@@ -1,6 +1,6 @@
 # Custom Rules for Planning
 
-Custom rules let you inject project-specific or personal conventions into the planning workflow (make, exec, plan-review). Rules are free-form markdown loaded at skill invocation time and applied as additional instructions alongside the skill's built-in behavior.
+Custom rules let you inject project-specific or personal conventions into the planning workflow (make-plan, exec, plan-review). Rules are free-form markdown loaded at skill invocation time and applied as additional instructions alongside the skill's built-in behavior.
 
 ## File Locations
 
@@ -44,7 +44,7 @@ Ask the make command to manage rules:
 
 ## How Rules Apply
 
-- **make**: rules influence plan structure, testing approach, naming conventions, task granularity
+- **make-plan**: rules influence plan structure, testing approach, naming conventions, task granularity
 - **plan-review**: rules become additional review criteria for convention adherence
 - **exec**: rules propagate to task subagents via the `USER_RULES` placeholder in task prompts
 

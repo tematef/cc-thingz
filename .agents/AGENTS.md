@@ -21,6 +21,8 @@ plugins/<plugin-name>/
 └── skills/<skill>/SKILL.md
 ```
 
+- No `commands/` directory: AGY plugins do not load it. An upstream Claude Code slash command is ported to `skills/<name>/SKILL.md` (e.g. `/planning:make` → `skills/make-plan/`).
+- Agents in `agents/*.md` use AGY markdown-agent frontmatter (`name`, `description`, `tools` as AGY tool names, `subagent: true`), never Claude Code fields (`tools: Read, Grep, Bash`, `model: opus`, `color`).
 - `hooks.json` handlers run with the plugin root as working directory, so script paths in `command` are relative to it.
 - A script needed by more than one plugin is shipped **byte-identical** in each (e.g. `resolve-project-dir.sh`); a test fails if the copies drift.
 
@@ -78,6 +80,7 @@ Skills, prompts and scripts use AGY tool names, never Claude Code ones:
   - `plugins/release-tools/` (`last-tag`, `new`), `plugins/review/skills/git-review/`, `plugins/review/skills/pr/`, `tests/test-release-tools.sh` — `revmux` replaces `git-review` and `pr`;
   - `.github/workflows/`;
   - Claude Code packaging: `CLAUDE.md`, `.claude-plugin/`, `plugins/*/.claude-plugin/`.
+- **Ported upstream files**: upstream edits to `plugins/planning/commands/make.md` belong in `plugins/planning/skills/make-plan/SKILL.md`; never let a `plugins/*/commands/` directory come back.
 - **Keep ours for `.revmux/profile.md`**: upstream's copy describes upstream's project. When upstream touches it, keep the fork's version.
 
 ## 8. No remote CI

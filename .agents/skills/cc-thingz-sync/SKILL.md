@@ -67,13 +67,15 @@ If conflicts occur:
     .claude-plugin \
     'plugins/*/.claude-plugin'
   ```
+- **Ported commands and agents**: AGY plugins do not load `commands/`. When upstream modifies `plugins/planning/commands/make.md`, apply the change to `plugins/planning/skills/make-plan/SKILL.md` (keep its `name`/`description` frontmatter and AGY tool names), then `git rm` the re-created `plugins/planning/commands/make.md`. Any other new upstream `plugins/*/commands/<name>.md` is ported to `plugins/*/skills/<name>/SKILL.md` the same way. When upstream modifies `plugins/*/agents/*.md`, keep the AGY markdown-agent frontmatter (`tools` as AGY tool names, `subagent: true`, `model: inherit`) and take only the body changes.
 - Upstream `.claude/` project-override lookups are not used in this fork: when a merged script or test adds a `.claude/<file>` fallback, drop it and keep only `.agents/<file>`.
 - If assistance is needed to resolve a conflict, use `ask_question` to confirm the resolution with the user.
 
 ### 4. Audit for Legacy Tool Leaks
 After rebase completes, check if new upstream commits introduced any legacy Claude Code tool calls or paths:
 ```bash
-grep -rn '\bBash tool\b\|\bAgent tool\b\|\bAskUserQuestion\b\|\bEnterPlanMode\b\|\bEnterWorktree\b\|\$CLAUDE_PLUGIN_ROOT' plugins/
+grep -rn '\bBash tool\b\|\bAgent tool\b\|\bAskUserQuestion\b\|\bEnterPlanMode\b\|\bEnterWorktree\b\|\$CLAUDE_PLUGIN_ROOT\|subagent_type\|^tools: Read\|^model: opus\|via Bash' plugins/
+ls -d plugins/*/commands 2>/dev/null   # must print nothing
 ```
 If any matches are found, adapt them to AGY tool names and paths.
 

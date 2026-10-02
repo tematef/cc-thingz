@@ -16,7 +16,7 @@ For every entry in the payload's `workspacePaths` (the payload has no cwd):
   2. skip unless a `.ralphex/` directory exists between the workspace and the
      VCS root; `.ralphex/` is never created;
   3. resolve `<project>/docs/plans` with the shared `resolve-project-dir.sh`
-     (the same project root /planning:make uses; no override is applied);
+     (the same project root the make-plan skill uses; no override is applied);
   4. take the nearest `.ralphex/` at or above that project, up to the VCS root;
   5. create the link only when `.ralphex/plans` is missing or an empty
      directory. An existing symlink (wherever it points) and a directory that

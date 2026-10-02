@@ -23,6 +23,7 @@ This repository is a fork of [umputun/cc-thingz](https://github.com/umputun/cc-t
 | :-------------------- | :------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
 | Packaging             | `.claude-plugin/plugin.json`, marketplace install        | `plugin.json` at each plugin root, registered by `./install.sh` in `~/.gemini/config/plugins.json`              |
 | Hooks                 | `hooks/hooks.json`, Claude hook events                   | `hooks.json` at the plugin root; AGY events `PreToolUse`, `PreInvocation`, `Stop`                               |
+| Commands              | `commands/*.md` slash commands (`/planning:make`)        | AGY plugins do not load `commands/`; upstream commands are ported to skills (`make-plan`), agents use AGY markdown-agent frontmatter |
 | Tools in skills       | `Agent`, `Bash`, `AskUserQuestion`, `Read`/`Write`/`Edit` | `invoke_subagent`, `run_command`, `ask_question`, `view_file`/`write_to_file`/`replace_file_content`           |
 | Project overrides     | `.claude/`                                               | `.agents/`                                                                                                      |
 | User data             | `$CLAUDE_PLUGIN_DATA`                                    | `~/.gemini/config/plugins_data/cc-thingz/`                                                                      |
@@ -64,8 +65,10 @@ The typical flow from idea to merged change, and where each artifact lands:
 ```mermaid
 flowchart LR
     idea["Idea"] --> bs["brainstorm"]
-    bs -->|"Write plan"| make["/planning:make"]
+    bs -->|"Write plan"| make["make-plan"]
     make --> plans["project docs/plans/"]
+    bs -->|"Plan mode"| agyplan["AGY /plan (implementation_plan.md)"]
+    agyplan --> exec
     rp["ralphex-planner (external)"] -->|".ralphex/plans link"| plans
     plans --> exec["/planning:exec"]
     plans --> rx["ralphex (external)"]
@@ -114,9 +117,9 @@ Skills activate from natural-language triggers or explicitly as `/<plugin>:<skil
 
 | Component                             | Triggers                                  | What it does                                                                                                                                                                                                 |
 | :------------------------------------ | :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/planning:make` (command)            | "make a plan", `/planning:make <desc>`    | Gathers context, asks focused questions, explores approaches, and writes `docs/plans/yyyymmdd-<task>.md` with tasks, file lists, tests and progress checkboxes. Offers interactive review, auto review, or start. |
+| `make-plan` (skill)                   | "make a plan", "plan this feature"        | Gathers context, asks focused questions, explores approaches, and writes `docs/plans/yyyymmdd-<task>.md` with tasks, file lists, tests and progress checkboxes. Offers interactive review, auto review, or start. |
 | `exec` (skill)                        | "exec", "execute plan", "run plan"        | Executes a plan task by task, one isolated subagent per task, optionally in a git worktree; then review phases (comprehensive, code smells, external, critical-only), optional finalize, stats, and moves the plan to `completed/`. Subagents never ask questions; judgment calls are reported at the end. |
-| `plan-review` (agent)                 | "Auto review" in `/planning:make`         | Reviews a plan for problem definition, scope creep, over-engineering, testing and task granularity; verdict APPROVE or NEEDS REVISION.                                                                        |
+| `plan-review` (agent)                 | "Auto review" in `make-plan`, or "review this plan with the plan-review agent" | Read-only review of a `docs/plans/` plan or an AGY `implementation_plan.md`: problem definition, scope creep, over-engineering, testing and task granularity; verdict APPROVE or NEEDS REVISION.                                                                        |
 | `autonomous-exec-guard` (hook)        | every tool call                           | See [Hooks](#hooks).                                                                                                                                                                                         |
 | `plan-annotate` (hook)                | end of a turn that changed `implementation_plan.md` | See [Hooks](#hooks).                                                                                                                                                                               |
 | `ralphex-plans-link` (hook)           | start of every turn                       | See [Hooks](#hooks).                                                                                                                                                                                         |
@@ -215,7 +218,7 @@ The **planning** and **brainstorm** plugins load free-form Markdown rules at inv
 
 | Plugin     | Rules file            | Affects                   |
 | :--------- | :-------------------- | :------------------------ |
-| planning   | `planning-rules.md`   | make, exec, plan-review   |
+| planning   | `planning-rules.md`   | make-plan, exec, plan-review |
 | brainstorm | `brainstorm-rules.md` | brainstorm                |
 
 Example `.agents/planning-rules.md`:
@@ -230,7 +233,7 @@ Example `.agents/planning-rules.md`:
 - always include rollback steps for migrations
 ```
 
-Ask `/planning:make` or `brainstorm` to show, add or clear rules at either level (for example "show my planning rules" or "clear user-level brainstorm rules").
+Ask `make-plan` or `brainstorm` to show, add or clear rules at either level (for example "show my planning rules" or "clear user-level brainstorm rules").
 
 ## Repository layout
 
@@ -243,7 +246,7 @@ Ask `/planning:make` or `brainstorm` to show, add or clear rules at either level
 ├── install.sh                    # registers and links the plugins
 ├── plugins/
 │   ├── brainstorm/
-│   ├── planning/                 # commands/, skills/exec/, agents/, scripts/, hooks.json
+│   ├── planning/                 # skills/make-plan/, skills/exec/, agents/, scripts/, hooks.json
 │   ├── review/
 │   ├── thinking-tools/
 │   ├── workflow/
