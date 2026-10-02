@@ -29,7 +29,7 @@ Invoke directly with `/brainstorm:brainstorm` or let it activate via intent matc
 - covers architecture, components, data flow, error handling, testing
 
 ### Phase 4: Next Steps
-- **Write plan** — invokes `/planning:make` passing brainstorm context
+- **Write plan** — activates the make-plan skill, passing brainstorm context
 - **Plan mode** — enters structured plan mode for detailed planning
 - **Start now** — begins implementing directly
 
@@ -40,7 +40,7 @@ User: "let's brainstorm how to add caching to the API"
 → Phase 1: asks about cache scope, invalidation needs, performance goals
 → Phase 2: proposes in-memory LRU, Redis, HTTP cache headers
 → Phase 3: details selected approach section by section
-→ Phase 4: user picks "Write plan" → /planning:make runs with full context
+→ Phase 4: user picks "Write plan" → make-plan runs with full context
 
 User: "brainstorm a better error handling strategy"
 → Phase 1: examines current error patterns, asks about requirements

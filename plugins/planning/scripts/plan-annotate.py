@@ -45,7 +45,7 @@ limitations:
     file on disk - if you edit the file on disk separately, those changes
     won't be seen by this hook
 
-file mode (for /planning:make integration):
+file mode (for make-plan skill integration):
 
     plan-annotate.py docs/plans/foo.md
 

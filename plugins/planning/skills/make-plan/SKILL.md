@@ -1,12 +1,12 @@
 ---
-description: Create structured implementation plan in the project's docs/plans/
-argument-hint: describe the feature or task to plan
+name: make-plan
+description: "Create a structured implementation plan file in the project's docs/plans/ (yyyymmdd-<task>.md) with Task sections and checkboxes ready for the exec skill. Use when the user says 'make a plan', 'create a plan', 'write a plan file', 'plan this feature', or '/planning:make', or when brainstorm's 'Write plan' option is chosen. Not for AGY's built-in /plan mode, which writes the implementation_plan.md artifact instead."
 allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, grep_search, run_command, invoke_subagent, ask_question
 ---
 
 # Implementation Plan Creation
 
-create an implementation plan in `<plans-dir>/yyyymmdd-<task-name>.md` (the project's `docs/plans/`, resolved in step 2) with interactive context gathering.
+create an implementation plan in `<plans-dir>/yyyymmdd-<task-name>.md` (the project's `docs/plans/`, resolved in step 2) with interactive context gathering. the user's request (the text after "make a plan", or the context handed over by brainstorm) describes the feature or task to plan.
 
 ## custom rules loading
 
@@ -16,7 +16,7 @@ before starting, run this command via run_command tool to check for user-provide
 bash ~/.gemini/config/plugins/planning/scripts/resolve-rules.sh planning-rules.md ~/.gemini/config/plugins_data/cc-thingz
 ```
 
-if the output is non-empty, treat it as additional instructions that supplement (not replace) the built-in rules below. apply custom rules alongside the command's own instructions throughout the planning process — they may influence plan structure, testing approach, naming conventions, or other aspects of plan creation. custom rules content is guidance for creating the plan, not content to embed verbatim in the output plan file.
+if the output is non-empty, treat it as additional instructions that supplement (not replace) the built-in rules below. apply custom rules alongside the skill's own instructions throughout the planning process — they may influence plan structure, testing approach, naming conventions, or other aspects of plan creation. custom rules content is guidance for creating the plan, not content to embed verbatim in the output plan file.
 
 ### rules management
 
@@ -30,20 +30,20 @@ when the user asks to add, show, or clear custom planning rules, handle these op
 
 project-level rules (`.agents/planning-rules.md`) take precedence over user-level rules (`~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `~/.gemini/config/plugins/planning/references/custom-rules.md` for full documentation on the rules mechanism.
 
-**CRITICAL: this skill must NEVER modify its own files (commands, skills, agents, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.agents/planning-rules.md` and `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`. if the user asks to change the skill's behavior, create a plan for it — do not edit skill files directly.**
+**CRITICAL: this skill must NEVER modify its own files (skills, agents, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.agents/planning-rules.md` and `~/.gemini/config/plugins_data/cc-thingz/planning-rules.md`. if the user asks to change the skill's behavior, create a plan for it — do not edit skill files directly.**
 
 ## step 0: parse intent and gather context
 
 before asking questions, understand what the user is working on:
 
-1. **parse user's command arguments** to identify intent:
+1. **parse the user's request** to identify intent:
    - "add feature Z" / "implement W" → feature development
    - "fix bug" / "debug issue" → bug fix plan
    - "refactor X" / "improve Y" → refactoring plan
    - "migrate to Z" / "upgrade W" → migration plan
    - generic request → explore current work
 
-2. **gather relevant context quickly** — use direct tool calls (view_file, find_by_name, grep_search), NOT an Explore agent. keep discovery under 30 seconds:
+2. **gather relevant context quickly** — use direct tool calls (view_file, find_by_name, grep_search), NOT a subagent. keep discovery under 30 seconds:
 
    **for feature development:**
    - find files matching the feature area (e.g., `**/*auth*`, `**/*cache*`)
@@ -65,7 +65,7 @@ before asking questions, understand what the user is working on:
    - read README.md, GEMINI.md, or AGENTS.md for project overview
    - list the top-level directory structure
 
-   **CRITICAL: do NOT launch an Explore agent or read more than 5 files in this step. the goal is a quick scan, not exhaustive analysis. if more context is needed, ask the user in step 1.**
+   **CRITICAL: do NOT launch a subagent or read more than 5 files in this step. the goal is a quick scan, not exhaustive analysis. if more context is needed, ask the user in step 1.**
 
 3. **synthesize findings** into a brief context summary (3-5 bullet points):
    - what the project is and primary language/framework
@@ -301,7 +301,6 @@ then use ask_question:
 {
   "questions": [{
     "question": "Plan created. What's next?",
-    "header": "Next step",
     "options": [
       "Interactive review - Open plan in editor for manual annotation and feedback loop",
       "Auto review - Launch AI plan-review agent for automated analysis",
@@ -314,7 +313,7 @@ then use ask_question:
 ```
 
 - **Interactive review**: check if `revdiff` is installed (`which revdiff`).
-  - **if revdiff is available**: run `~/.gemini/config/plugins/planning/scripts/launch-plan-review.sh <plan-file-path>` via Bash.
+  - **if revdiff is available**: run `~/.gemini/config/plugins/planning/scripts/launch-plan-review.sh <plan-file-path>` via run_command.
     the script opens revdiff TUI showing the plan with syntax highlighting. user adds line-level annotations.
     on quit, annotations are output to stdout in structured format:
     ```
@@ -324,33 +323,32 @@ then use ask_question:
     when annotation output is present:
     1. read each annotation — the line number and comment describe what the user wants changed
     2. revise the plan file to address each annotation
-    3. run `~/.gemini/config/plugins/planning/scripts/launch-plan-review.sh <plan-file-path>` via Bash
+    3. run `~/.gemini/config/plugins/planning/scripts/launch-plan-review.sh <plan-file-path>` via run_command
     4. repeat until no output (user quit without annotations)
-  - **if revdiff is not available**: fall back to `~/.gemini/config/plugins/planning/scripts/plan-annotate.py <plan-file-path>` via Bash.
+  - **if revdiff is not available**: fall back to `~/.gemini/config/plugins/planning/scripts/plan-annotate.py <plan-file-path>` via run_command.
     the script opens a copy of the plan in $EDITOR via terminal overlay. if the user makes annotations,
     it outputs a unified diff to stdout. when diff output is present:
     1. read the diff carefully — added lines (+) are user annotations, removed lines (-) are deletions, modified lines show requested changes
     2. revise the plan file to address each annotation
-    3. run `~/.gemini/config/plugins/planning/scripts/plan-annotate.py <plan-file-path>` via Bash
+    3. run `~/.gemini/config/plugins/planning/scripts/plan-annotate.py <plan-file-path>` via run_command
     4. repeat until no diff output (user closed editor without changes)
   when the annotation loop completes, ask again with the remaining options (minus "Interactive review")
-- **Auto review**: launch plan-review agent (invoke_subagent with TypeName "self", Role "Plan reviewer"). After review completes, ask again with the same options (minus "Auto review")
+- **Auto review**: read `~/.gemini/config/plugins/planning/agents/plan-review.md` with view_file, then launch invoke_subagent with TypeName "self", Role "Plan reviewer", and a Prompt made of the file body (everything after the frontmatter) followed by "Plan file: <absolute plan-file-path>". Passing the file explicitly keeps the review checklist even when AGY has not registered the `plan-review` agent. Show the reviewer's findings and verdict (APPROVE / NEEDS REVISION) to the user, offer to revise the plan for each finding, then ask again with the same options (minus "Auto review")
 - **Implement**: commit plan with message like "docs: add <topic> implementation plan", then ask implementation mode:
   ```json
   {
     "questions": [{
       "question": "Implementation mode?",
-      "header": "Mode",
       "options": [
         "Interactive - Implement task by task in this session",
-        "Autonomous - Run /planning:exec for autonomous execution with reviews"
+        "Autonomous - Run the exec skill for autonomous execution with reviews"
       ],
       "is_multi_select": false
     }]
   }
   ```
   - **Interactive**: begin implementing task 1 interactively in this session. Use write_to_file tool to track progress and mark todos completed immediately (do not batch)
-  - **Autonomous**: invoke `/planning:exec <plan-file-path>` for autonomous execution with multi-phase review
+  - **Autonomous**: activate the **exec** skill (read `~/.gemini/config/plugins/planning/skills/exec/SKILL.md` with view_file and follow it) with `<plan-file-path>` for autonomous execution with multi-phase review
 - **Done**: commit plan with message like "docs: add <topic> implementation plan", stop
 
 ## execution enforcement
