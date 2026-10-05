@@ -30,8 +30,9 @@ args+=("--sandbox" "read-only")
 # suppression -- any other value (including `0`, `false`, empty) keeps
 # the overrides on, matching the documented "set to 1 to enable" semantic.
 if [ "${CODEX_NO_OVERRIDES:-}" != 1 ]; then
+    # model comes from the user's codex config unless CODEX_MODEL is set
+    [ -n "${CODEX_MODEL:-}" ] && args+=("-c" "model=$CODEX_MODEL")
     args+=(
-        "-c" "model=${CODEX_MODEL:-gpt-5.5}"
         "-c" "model_reasoning_effort=xhigh"
         "-c" "stream_idle_timeout_ms=3600000"
     )

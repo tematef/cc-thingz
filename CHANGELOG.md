@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.10.3 - 2026-10-05
+
+### Improvements
+
+- exec: `run-codex.sh` no longer pins `gpt-5.5`. Codex uses the model from the user's `~/.codex/config.toml`, the same as the codex plugin. `CODEX_MODEL` still overrides it
+
 ## workflow v1.3.2 - 2026-09-08
 
 ### Bug Fixes

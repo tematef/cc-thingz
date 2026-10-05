@@ -780,7 +780,7 @@ stub_out="$(cd "$GIT_RC" && PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prom
 assert_not_contains "git: no --skip-git-repo-check" "$stub_out" "--skip-git-repo-check"
 assert_contains "git: exec is present" "$stub_out" "exec"
 assert_contains "git: --sandbox is present" "$stub_out" "--sandbox"
-assert_contains "git: -c model= flag present" "$stub_out" "model=gpt-5.5"
+assert_not_contains "git: no -c model= when CODEX_MODEL unset (codex config decides)" "$stub_out" "model="
 assert_contains "git: -c model_reasoning_effort= flag present" "$stub_out" "model_reasoning_effort=xhigh"
 assert_contains "git: -c stream_idle_timeout_ms= flag present" "$stub_out" "stream_idle_timeout_ms=3600000"
 assert_not_contains "git: no project_doc flag (dead Codex config key, removed)" "$stub_out" "project_doc"
@@ -791,13 +791,12 @@ echo ""
 echo "test 15b: git repo with CODEX_MODEL override"
 stub_out="$(cd "$GIT_RC" && CODEX_MODEL=gpt-5.6 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
 assert_contains "git: CODEX_MODEL env var overrides model" "$stub_out" "model=gpt-5.6"
-assert_not_contains "git: default model not used when override set" "$stub_out" "model=gpt-5.5"
 
 # test 15c: CODEX_NO_OVERRIDES=1 suppresses all -c flags -- for proxies that reject them
 echo ""
 echo "test 15c: CODEX_NO_OVERRIDES=1 suppresses -c overrides"
 stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=1 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_not_contains "git: no -c model= when CODEX_NO_OVERRIDES=1" "$stub_out" "model=gpt-5.5"
+assert_not_contains "git: no -c model= when CODEX_NO_OVERRIDES=1" "$stub_out" "model="
 assert_not_contains "git: no -c model_reasoning_effort= when CODEX_NO_OVERRIDES=1" "$stub_out" "model_reasoning_effort"
 assert_not_contains "git: no -c stream_idle_timeout_ms= when CODEX_NO_OVERRIDES=1" "$stub_out" "stream_idle_timeout_ms"
 # non -c args (exec / --sandbox / prompt) must still be there
@@ -811,17 +810,17 @@ assert_contains "git: prompt still passed with CODEX_NO_OVERRIDES=1" "$stub_out"
 echo ""
 echo "test 15d: CODEX_NO_OVERRIDES=0 does NOT activate suppression"
 stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=0 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=0" "$stub_out" "model=gpt-5.5"
+assert_contains "git: -c model_reasoning_effort= present when CODEX_NO_OVERRIDES=0" "$stub_out" "model_reasoning_effort=xhigh"
 
 echo ""
 echo "test 15e: CODEX_NO_OVERRIDES=false does NOT activate suppression"
 stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=false PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=false" "$stub_out" "model=gpt-5.5"
+assert_contains "git: -c model_reasoning_effort= present when CODEX_NO_OVERRIDES=false" "$stub_out" "model_reasoning_effort=xhigh"
 
 echo ""
 echo "test 15f: CODEX_NO_OVERRIDES=no does NOT activate suppression"
 stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=no PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=no" "$stub_out" "model=gpt-5.5"
+assert_contains "git: -c model_reasoning_effort= present when CODEX_NO_OVERRIDES=no" "$stub_out" "model_reasoning_effort=xhigh"
 
 if [ "$HG_AVAILABLE" -eq 1 ]; then
     # test 16: hg repo -> codex called WITH --skip-git-repo-check positioned
@@ -834,7 +833,7 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
     assert_contains "hg: --skip-git-repo-check flag is present" "$stub_out" "--skip-git-repo-check"
     assert_contains "hg: exec is present" "$stub_out" "exec"
     assert_contains "hg: --sandbox is present" "$stub_out" "--sandbox"
-    assert_contains "hg: -c model= flag present" "$stub_out" "model=gpt-5.5"
+    assert_not_contains "hg: no -c model= when CODEX_MODEL unset" "$stub_out" "model="
     assert_contains "hg: -c model_reasoning_effort= flag present" "$stub_out" "model_reasoning_effort=xhigh"
     assert_not_contains "hg: no project_doc flag (dead Codex config key, removed)" "$stub_out" "project_doc"
     assert_contains "hg: prompt is passed through" "$stub_out" "hello prompt"
