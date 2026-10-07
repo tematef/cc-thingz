@@ -10,7 +10,7 @@ This skill pulls in updates from the original upstream repository (`https://gith
 
 ## Workflow
 
-When the user requests to sync or update `cc-thingz` from upstream, follow these steps:
+When the user requests to sync or update `cc-thingz` from upstream (note: when asked to check or use "latest", default to checking `origin` at `tematef/cc-thingz`; only fetch/rebase `upstream` upon explicit user confirmation), follow these steps:
 
 ### 1. Pre-flight Checks
 Verify git status is clean:
@@ -37,8 +37,11 @@ git fetch upstream
 ### 3. Rebase
 Rebase current branch (typically `master`) onto `upstream/master`:
 ```bash
-git rebase upstream/master
+git rebase --rebase-merges upstream/master
 ```
+
+> [!IMPORTANT]
+> **Live-hook safety**: Plugins in `~/.gemini/config/plugins/` link directly to this repository. During a rebase, checking out older historical commits where hook scripts (e.g. `autonomous-exec-hook.py`) did not exist will fail AGY's live `PreToolUse` hook and block tool execution. Before rebasing, safeguard active hooks (e.g. copy `plugins/planning` to `/tmp/planning-live-backup` and link `~/.gemini/config/plugins/planning` to it), and run `./install.sh` immediately after the rebase finishes.
 
 If conflicts occur:
 - **Do NOT overwrite AGY/Jetski adaptations**:

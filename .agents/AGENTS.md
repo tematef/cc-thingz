@@ -5,7 +5,7 @@ This file (`.agents/AGENTS.md`, discovered by AGY in the `.agents/` directory) i
 
 ## Purpose
 
-This repository is a fork of [umputun/cc-thingz](https://github.com/umputun/cc-thingz), rebuilt as a native plugin suite for **AGY / Jetski**: planning, brainstorm, review, thinking tools, workflow helpers and skill evaluation.
+This repository is a fork of [umputun/cc-thingz](https://github.com/umputun/cc-thingz), rebuilt as a native plugin suite for **AGY / Jetski** only (no Claude Code or Codex tools/packaging): planning, brainstorm, review, thinking tools, workflow helpers and skill evaluation.
 The plugin catalog and the architecture diagrams live in [README.md](README.md).
 
 ## 1. Plugin architecture
@@ -75,13 +75,16 @@ Skills, prompts and scripts use AGY tool names, never Claude Code ones:
 
 ## 7. Upstream synchronization
 
+- **Default for "latest"**: When asked to check or use "latest", check `origin` (`tematef/cc-thingz`, `origin/master`) by default. Inspect upstream (`umputun/cc-thingz`, `upstream/master`) for updates, but **only sync or rebase against upstream upon explicit user confirmation**.
 - Sync with `https://github.com/umputun/cc-thingz.git` only through the `cc-thingz-sync` skill (`.agents/skills/cc-thingz-sync/SKILL.md`); it preserves the AGY/Jetski adaptations during the rebase.
 - **Never re-import** (always `git rm -rf --ignore-unmatch` when upstream touches them):
   - `plugins/release-tools/` (`last-tag`, `new`), `plugins/review/skills/git-review/`, `plugins/review/skills/pr/`, `tests/test-release-tools.sh` — `revmux` replaces `git-review` and `pr`;
   - `.github/workflows/`;
-  - Claude Code packaging: `CLAUDE.md`, `.claude-plugin/`, `plugins/*/.claude-plugin/`.
+  - Claude Code packaging: `CLAUDE.md`, `.claude-plugin/`, `plugins/*/.claude-plugin/`;
+  - Codex tools and configs: `run-codex.sh`, `~/.codex/` configurations.
 - **Ported upstream files**: upstream edits to `plugins/planning/commands/make.md` belong in `plugins/planning/skills/make-plan/SKILL.md`; never let a `plugins/*/commands/` directory come back.
 - **Keep ours for `.revmux/profile.md`**: upstream's copy describes upstream's project. When upstream touches it, keep the fork's version.
+- **Live-hook safety during rebase**: AGY plugins registered in `~/.gemini/config/plugins/` link directly to `plugins/` in this repository. Rebasing can check out older commits where hook scripts (e.g. `autonomous-exec-hook.py`) did not exist, causing AGY's live `PreToolUse` hooks to fail and block tool execution. Before running `git rebase`, safeguard active hooks (e.g., pointing the symlink to a temporary backup directory or ensuring stubs exist), and run `./install.sh` immediately after the rebase finishes.
 
 ## 8. No remote CI
 
