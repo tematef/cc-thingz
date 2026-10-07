@@ -35,13 +35,18 @@ git fetch upstream
 ```
 
 ### 3. Rebase
+> [!IMPORTANT]
+> **Live-hook safety**: AGY discovers plugins and hooks via `~/.gemini/config/plugins.json` (which points to `<repo>/plugins`). During a rebase, checking out older historical commits where hook scripts (e.g. `autonomous-exec-hook.py`) did not exist will fail AGY's live `PreToolUse` hook and block tool execution. Before running `git rebase`, safeguard active hooks:
+> ```bash
+> cp -r plugins /tmp/cc-thingz-plugins-backup
+> printf '{"entries": [{"path": "/tmp/cc-thingz-plugins-backup"}]}\n' > ~/.gemini/config/plugins.json
+> ```
+> Run `./install.sh && rm -rf /tmp/cc-thingz-plugins-backup` immediately after the rebase finishes to restore `plugins.json`.
+
 Rebase current branch (typically `master`) onto `upstream/master`:
 ```bash
 git rebase --rebase-merges upstream/master
 ```
-
-> [!IMPORTANT]
-> **Live-hook safety**: Plugins in `~/.gemini/config/plugins/` link directly to this repository. During a rebase, checking out older historical commits where hook scripts (e.g. `autonomous-exec-hook.py`) did not exist will fail AGY's live `PreToolUse` hook and block tool execution. Before rebasing, safeguard active hooks (e.g. copy `plugins/planning` to `/tmp/planning-live-backup` and link `~/.gemini/config/plugins/planning` to it), and run `./install.sh` immediately after the rebase finishes.
 
 If conflicts occur:
 - **Do NOT overwrite AGY/Jetski adaptations**:
@@ -64,6 +69,7 @@ If conflicts occur:
     plugins/release-tools \
     plugins/review/skills/git-review \
     plugins/review/skills/pr \
+    plugins/planning/skills/exec/scripts/run-codex.sh \
     tests/test-release-tools.sh \
     .github/workflows \
     CLAUDE.md \
