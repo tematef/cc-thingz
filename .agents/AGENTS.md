@@ -84,7 +84,7 @@ Skills, prompts and scripts use AGY tool names, never Claude Code ones:
   - Codex tools and configs: `plugins/planning/skills/exec/scripts/run-codex.sh`; `~/.codex/` configurations are excluded.
 - **Ported upstream files**: upstream edits to `plugins/planning/commands/make.md` belong in `plugins/planning/skills/make-plan/SKILL.md`; never let a `plugins/*/commands/` directory come back.
 - **Keep ours for `.revmux/profile.md`**: upstream's copy describes upstream's project. When upstream touches it, keep the fork's version.
-- **Live-hook safety during rebase**: AGY discovers plugins and hooks via `~/.gemini/config/plugins.json` (which points to `<repo>/plugins`). Rebasing can check out older commits where hook scripts (e.g. `autonomous-exec-hook.py`) did not exist, causing AGY's live `PreToolUse` hooks to fail and block tool execution. Before running `git rebase`, safeguard active hooks (e.g. copy `plugins` to `/tmp/cc-thingz-plugins-backup` and temporarily update `~/.gemini/config/plugins.json` or ensure stubs exist), and run `./install.sh` immediately after the rebase finishes.
+- **Live-hook safety during rebase**: AGY discovers plugins and hooks via symlinks in `~/.gemini/config/plugins/` (Priority 3) and `~/.gemini/config/plugins.json` (Priority 5). Rebasing can check out older commits where hook scripts (e.g. `autonomous-exec-hook.py`) did not exist, causing AGY's live `PreToolUse` hooks to fail and block tool execution. Before running `git rebase`, safeguard active hooks (copy `plugins` to `/tmp/cc-thingz-plugins-backup`, backup `plugins.json`, and repoint `~/.gemini/config/plugins/` symlinks to the backup or ensure stubs exist), and run `./install.sh` immediately after the rebase finishes.
 
 ## 8. No remote CI
 

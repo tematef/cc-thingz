@@ -36,12 +36,20 @@ git fetch upstream
 
 ### 3. Rebase
 > [!IMPORTANT]
-> **Live-hook safety**: AGY discovers plugins and hooks via `~/.gemini/config/plugins.json` (which points to `<repo>/plugins`). During a rebase, checking out older historical commits where hook scripts (e.g. `autonomous-exec-hook.py`) did not exist will fail AGY's live `PreToolUse` hook and block tool execution. Before running `git rebase`, safeguard active hooks:
+> **Live-hook safety**: AGY discovers plugins and hooks via symlinks in `~/.gemini/config/plugins/` (Priority 3) and entries in `~/.gemini/config/plugins.json` (Priority 5). During a rebase, checking out older historical commits where hook scripts (e.g. `autonomous-exec-hook.py`) did not exist will fail AGY's live `PreToolUse` hook and block tool execution. Before running `git rebase`, safeguard active hooks:
 > ```bash
 > cp -r plugins /tmp/cc-thingz-plugins-backup
-> printf '{"entries": [{"path": "/tmp/cc-thingz-plugins-backup"}]}\n' > ~/.gemini/config/plugins.json
+> cp ~/.gemini/config/plugins.json /tmp/plugins.json.bak
+> for p in /tmp/cc-thingz-plugins-backup/*; do
+>   [ -d "$p" ] && ln -sfn "$p" "$HOME/.gemini/config/plugins/$(basename "$p")"
+> done
 > ```
-> Run `./install.sh && rm -rf /tmp/cc-thingz-plugins-backup` immediately after the rebase finishes to restore `plugins.json`.
+> After the rebase finishes (or if aborted), restore `plugins.json`, run `install.sh` to repoint symlinks, and clean up:
+> ```bash
+> [ -f /tmp/plugins.json.bak ] && mv /tmp/plugins.json.bak ~/.gemini/config/plugins.json
+> ./install.sh && rm -rf /tmp/cc-thingz-plugins-backup
+> ```
+> *Emergency rescue*: If a rebase checkout already removed the script and tool execution is blocked, recreate a minimal stub at `plugins/planning/scripts/autonomous-exec-hook.py` returning `{"decision": "allow"}`.
 
 Rebase current branch (typically `master`) onto `upstream/master`:
 ```bash
