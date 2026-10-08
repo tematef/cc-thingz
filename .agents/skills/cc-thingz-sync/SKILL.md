@@ -11,9 +11,10 @@ This skill pulls in updates from the original upstream repository (`https://gith
 ## Workflow
 
 **Which remote.** "Latest" means `origin` (`tematef/cc-thingz`) by default, not upstream. For "pull/update to latest":
-1. `git fetch origin`, then compare: `git rev-list --left-right --count master...origin/master`.
-2. Behind only: `git merge --ff-only origin/master`.
-3. Diverged (origin was force-pushed): compare tips with `git diff master origin/master --stat`. If origin already contains the local work, ask with `ask_question`, then `git branch backup/master-pre-pull-<date> master && git reset --hard origin/master`. Prefer this over `git pull` (a merge duplicates the re-recorded history) and over a rebase (which walks old commits under the live hooks, see step 3).
+1. Precondition, before anything moves: `git status --porcelain` must print nothing, and `git symbolic-ref --short HEAD` must print `master`. Otherwise stop and ask the user to commit or stash, or to `git switch master`. `reset --hard` destroys uncommitted edits (plugins are edited live through the symlinks, so they are common here), and the backup below saves only commits of `master`, not the current branch.
+2. `git fetch origin`, then compare: `git rev-list --left-right --count master...origin/master`.
+3. Behind only: `git merge --ff-only origin/master`.
+4. Diverged (origin was force-pushed): compare tips with `git diff master origin/master --stat`. If origin already contains the local work, ask with `ask_question`, then `git branch backup/master-pre-pull-<date> master && git reset --hard origin/master`. Prefer this over `git pull` (a merge duplicates the re-recorded history) and over a rebase (which walks old commits under the live hooks, see step 3).
 
 A tip-to-tip switch checks out one tree, so it is safe for the live hooks when `git diff master origin/master -- plugins/` is empty. Otherwise apply step 3's safeguard first.
 
@@ -54,18 +55,26 @@ Rebasing onto upstream needs the user's explicit confirmation (`.agents/AGENTS.m
 > ```
 > The `rm -rf` first matters: if an earlier run left the directory behind, `cp -R` would nest the new copy inside it and the loop would link stale copies. `plugins.json` is not touched; `install.sh` re-registers its entry afterwards.
 >
-> After the rebase finishes (or is aborted), repoint the symlinks at the checkout, remove any link still pointing into the backup (plugins the rebase removed or renamed), then delete the backup:
+> After the rebase finishes (or is aborted), repoint the symlinks at the checkout, remove any link still pointing into the backup or the rescue worktree below (plugins the rebase removed or renamed), then delete both:
 > ```bash
 > ./install.sh && {
 >   for l in "$HOME"/.gemini/config/plugins/*; do
->     case "$(readlink "$l")" in /tmp/cc-thingz-plugins-backup/*) rm -f "$l" ;; esac
+>     case "$(readlink "$l")" in /tmp/cc-thingz-plugins-backup/*|/tmp/cc-thingz-rescue/*) rm -f "$l" ;; esac
 >   done
 >   rm -rf /tmp/cc-thingz-plugins-backup
+>   git worktree remove --force /tmp/cc-thingz-rescue 2>/dev/null || true
 > }
 > ```
 > If `install.sh` fails, fix it and run the block again: until it succeeds the live links still need the backup.
 >
-> *Emergency rescue*: if tool execution is already blocked because a rebase checkout removed a hook script, the agent cannot write the fix itself (the `autonomous-exec-guard` hook matches every tool). Ask the **user** to create the stub by hand outside AGY, e.g. `plugins/planning/scripts/autonomous-exec-hook.py` printing `{"decision": "allow"}`. The stub is an untracked file that blocks the rebase step that restores the real script: **delete it before `git rebase --continue` and never stage it**.
+> *Emergency rescue*: if tool execution is already blocked because the safeguard was skipped and a rebase checkout removed a hook script, the agent cannot fix it itself (the `autonomous-exec-guard` hook matches every tool). Ask the **user** to run this by hand outside AGY, from the checkout. It points the links at a worktree of the pre-rebase head, so nothing is added to the checkout and the rebase can go on in any number of steps:
+> ```bash
+> git worktree add --detach /tmp/cc-thingz-rescue "$(cat "$(git rev-parse --git-path rebase-merge/orig-head)")"
+> for p in /tmp/cc-thingz-rescue/plugins/*; do
+>   [ -d "$p" ] && ln -sfn "$p" "$HOME/.gemini/config/plugins/$(basename "$p")"
+> done
+> ```
+> Never create a stub hook script inside the checkout: as an untracked file it makes git refuse the rebase step that restores the real script.
 
 Rebase current branch (typically `master`) onto `upstream/master`:
 ```bash
