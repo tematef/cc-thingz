@@ -96,7 +96,9 @@ Skills, prompts and scripts use AGY tool names, never Claude Code ones:
 for t in tests/test-*.sh; do bash "$t" || echo "FAIL: $t"; done       # all shell suites
 python3 plugins/planning/scripts/autonomous-exec-hook.py --test         # embedded tests
 python3 plugins/planning/scripts/ralphex-plans-link-hook.py --test
+python3 plugins/agterm-ide-launcher/scripts/agterm-lifecycle-hook.py --test
 python3 .github/scripts/check-frontmatter.py .                          # needs PyYAML
+
 ```
 
 Python hooks must stay compatible with Python 3.9 (`from __future__ import annotations`).

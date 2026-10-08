@@ -1,0 +1,30 @@
+{
+  "agterm-agent-status": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python3 scripts/agterm-lifecycle-hook.py pre_invocation",
+        "timeout": 5
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 scripts/agterm-lifecycle-hook.py stop",
+        "timeout": 5
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "ask_question",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/agterm-lifecycle-hook.py ask_question",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -165,7 +165,7 @@ Multi-agent review of branches and pull requests is done by **revmux**, a separa
 
 ### agterm-ide-launcher
 
-A keyboard shortcut for the **agterm** terminal (`ctrl+shift+e` by default) that opens the current session's project in Antigravity IDE after a native Yes/No picker. See [plugins/agterm-ide-launcher/README.md](plugins/agterm-ide-launcher/README.md).
+A keyboard shortcut for the **agterm** terminal (`ctrl+shift+e` by default) that opens the current session's project in Antigravity IDE after a native Yes/No picker, plus session status indicators, optional sound alerts, and desktop notifications. See [plugins/agterm-ide-launcher/README.md](plugins/agterm-ide-launcher/README.md).
 
 ### Project skill: cc-thingz-sync
 
@@ -173,12 +173,14 @@ A keyboard shortcut for the **agterm** terminal (`ctrl+shift+e` by default) that
 
 ## Hooks
 
-| Hook                    | Plugin     | Event           | Behavior                                                                                                                                                                                                                              |
-| :---------------------- | :--------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `autonomous-exec-guard` | planning   | `PreToolUse`    | Tier 1: auto-approves read-only commands, test runners, and writes inside the workspace, `/tmp` or scratch. Tier 2: approves everything from subagents and active `/exec` runs. Tier 3: always asks for `git push`, `sudo`, `rm -rf /`, `curl \| bash`. Audit log: `/tmp/cc-thingz-hook-audit.jsonl`. |
-| `plan-annotate`         | planning   | `Stop`          | When `implementation_plan.md` changed, opens it in `revdiff` (or `$EDITOR`) for line-by-line annotations and sends them back as a revision request.                                                                                   |
-| `ralphex-plans-link`    | planning   | `PreInvocation` | Links the nearest existing `.ralphex/plans` to the project's `docs/plans` (see below). Silent; always returns `{}`.                                                                                                                  |
-| `skill-eval`            | skill-eval | `PreInvocation` | Injects the skill-activation instruction.                                                                                                                                                                                             |
+| Hook                    | Plugin              | Event                                 | Behavior                                                                                                                                                                                                                              |
+| :---------------------- | :------------------ | :------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `autonomous-exec-guard` | planning            | `PreToolUse`                          | Tier 1: auto-approves read-only commands, test runners, and writes inside the workspace, `/tmp` or scratch. Tier 2: approves everything from subagents and active `/exec` runs. Tier 3: always asks for `git push`, `sudo`, `rm -rf /`, `curl \| bash`. Audit log: `/tmp/cc-thingz-hook-audit.jsonl`. |
+| `plan-annotate`         | planning            | `Stop`                                | When `implementation_plan.md` changed, opens it in `revdiff` (or `$EDITOR`) for line-by-line annotations and sends them back as a revision request.                                                                                   |
+| `ralphex-plans-link`    | planning            | `PreInvocation`                       | Links the nearest existing `.ralphex/plans` to the project's `docs/plans` (see below). Silent; always returns `{}`.                                                                                                                  |
+| `skill-eval`            | skill-eval          | `PreInvocation`                       | Injects the skill-activation instruction.                                                                                                                                                                                             |
+| `agterm-agent-status`   | agterm-ide-launcher | `PreInvocation`, `PreToolUse`, `Stop` | Sets agterm session status (`active`, `blocked`, `completed`), sends desktop notifications, and triggers optional sound alerts.                                                                                                      |
+
 
 How hooks coexist:
 
