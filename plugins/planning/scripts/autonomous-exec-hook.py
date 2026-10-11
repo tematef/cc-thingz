@@ -117,7 +117,7 @@ SAFE_GIT_SUBCOMMANDS = {
     "for-each-ref", "name-rev", "merge-base", "rev-list", "ls-tree",
     "symbolic-ref", "fetch", "branch", "checkout", "switch", "add",
     "commit", "stash", "rebase", "reset", "worktree", "tag", "config",
-    "rm", "mv", "archive", "restore",
+    "rm", "mv", "archive", "restore", "init",
 }
 
 WRITE_FILE_TOOLS = {
@@ -731,7 +731,7 @@ def is_safe_segment(
                     return True, redir_writes
         return False, False
 
-    if cmd_name in ("python", "python3"):
+    if cmd_name in ("python", "python3", "swift"):
         if len(tokens) >= 2:
             arg1 = tokens[1].strip("\"'")
             if is_safe_special_target(arg1, safe_vars):
