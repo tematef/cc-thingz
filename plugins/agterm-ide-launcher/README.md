@@ -26,9 +26,9 @@ bash plugins/agterm-ide-launcher/scripts/install-keymap.sh
 ### 2. Session Status Indicators & Notifications
 
 Lifecycle hooks automatically track agent execution when running inside agterm (`$AGTERM_SESSION_ID` is set):
-- **Active execution (`PreInvocation`)**: Sets session status to `active` with a pulsing tab indicator (`--blink`).
-- **Waiting for user input (`PreToolUse: ask_question`)**: Sets session status to `blocked` (blinking), sends a desktop notification (`"Agent is waiting for your input"`), and optionally plays an alert sound.
-- **Task completed (`Stop`)**: Sets status to `completed` (with `--auto-reset` once the tab is focused), sends a desktop notification (`"Task completed"`), and optionally plays a completion chime. If the task ends with an error, status is marked `blocked` with an error chime and notification.
+- **Active execution (`PreInvocation`)**: Sets session status to `active` with a pulsing tab indicator (`--blink`), and starts a background screen watcher for interactive CLI confirmation dialogs.
+- **Waiting for user input (`PreToolUse: ask_question` or screen watcher)**: Sets session status to `blocked` (blinking), sends a desktop notification (`"Agent is waiting for your input"`), and optionally plays an alert sound when the agent asks a question or prompts for command confirmation (`"Run this command?"`).
+- **Task completed (`Stop`)**: Sets status to `completed` (with `--auto-reset` once the tab is focused), sends a desktop notification (`"Task completed"`), and optionally plays a completion chime when all work is finished. If background tasks or subagents are still active (`fullyIdle: false`), the completion alert is deferred until all background operations finish. If the task ends with an error, status is marked `blocked` with an error chime and notification.
 
 Audio alerts are **optional and disabled by default** so agent runs stay quiet unless explicitly configured.
 
