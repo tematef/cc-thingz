@@ -31,6 +31,7 @@ This repository is a fork of [umputun/cc-thingz](https://github.com/umputun/cc-t
 | Plans and backlog     | repository-level `docs/plans/`, `docs/backlog/`          | resolved per project, so monorepo sub-projects keep their own; closed backlog items are archived               |
 | ralphex               | —                                                        | ralphex plans are routed into the project's `docs/plans/` by a hook                                            |
 | Command approvals     | —                                                        | `autonomous-exec-guard` auto-approves safe tool calls and all calls from subagents and `/exec` runs             |
+| Headless runs         | —                                                        | every skill that uses `ask_question` has a "When no one can answer" section: in `-p` runs and subagents, where `ask_question` is unavailable, it picks the recommended option and continues instead of stopping |
 | Removed               | `release-tools`, `review:git-review`, `review:pr`, `thinking-tools:ask-codex` | `revmux` (a separate plugin) covers multi-agent code review                         |
 | CI                    | GitHub Actions                                           | none — every check runs locally                                                                                 |
 
@@ -161,7 +162,7 @@ Multi-agent review of branches and pull requests is done by **revmux**, a separa
 
 | Component           | When           | What it does                                                                                                              |
 | :------------------ | :------------- | :------------------------------------------------------------------------------------------------------------------------ |
-| `skill-eval` (hook) | every turn     | Injects the "MANDATORY SKILL ACTIVATION" instruction so the agent checks and reads relevant `SKILL.md` files before acting. |
+| `skill-eval` (hook) | once per turn  | Injects the "MANDATORY SKILL ACTIVATION" instruction so the agent checks and reads relevant `SKILL.md` files before acting. |
 
 ### agterm-ide-launcher
 
@@ -178,9 +179,8 @@ A keyboard shortcut for the **agterm** terminal (`ctrl+shift+e` by default) that
 | `autonomous-exec-guard` | planning            | `PreToolUse`                          | Tier 1: auto-approves read-only commands, test runners, and writes inside the workspace, `/tmp` or scratch. Tier 2: approves everything from subagents and active `/exec` runs. Tier 3: always asks for `git push`, `sudo`, `rm -rf /`, `curl \| bash`. Audit log: `/tmp/cc-thingz-hook-audit.jsonl`. |
 | `plan-annotate`         | planning            | `Stop`                                | When `implementation_plan.md` changed, opens it in `revdiff` (or `$EDITOR`) for line-by-line annotations and sends them back as a revision request.                                                                                   |
 | `ralphex-plans-link`    | planning            | `PreInvocation`                       | Links the nearest existing `.ralphex/plans` to the project's `docs/plans` (see below). Silent; always returns `{}`.                                                                                                                  |
-| `skill-eval`            | skill-eval          | `PreInvocation`                       | Injects the skill-activation instruction.                                                                                                                                                                                             |
+| `skill-eval`            | skill-eval          | `PreInvocation`                       | Injects the skill-activation instruction on the first model call of each turn (keyed on `executionId` per conversation), not after every tool call. State: `${XDG_STATE_HOME:-~/.local/state}/cc-thingz/skill-eval/`. Injects on every call if the payload or state is unusable. |
 | `agterm-agent-status`   | agterm-ide-launcher | `PreInvocation`, `PreToolUse`, `Stop` | Sets agterm session status (`active`, `blocked`, `completed`), sends desktop notifications, and triggers optional sound alerts.                                                                                                      |
-
 
 How hooks coexist:
 

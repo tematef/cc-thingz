@@ -8,6 +8,10 @@ allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, gre
 
 The current approach isn't working as expected. Step back and re-examine the problem from the beginning.
 
+## When no one can answer
+
+If the `ask_question` tool is missing, or you run as a subagent or a headless (`-p`) session where the user cannot reply, do not ask in plain text and stop. Wherever this skill says to ask, pick the option marked recommended (otherwise the first option, or the answer the context makes most likely), state the choice and the reason in one line, and carry on to the deliverable. If that option would delete, push, or discard work, pick the safer option instead.
+
 ## Workflow
 
 ### Step 1: Re-analyze the Core Problem

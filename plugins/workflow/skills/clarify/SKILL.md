@@ -10,6 +10,10 @@ Handle user confusion by verifying intent, explaining actual behavior, and deter
 
 **Primary goal**: Clarify and explain, not fix. Most confusion stems from misunderstanding or forgetting, not from bugs.
 
+## When no one can answer
+
+If the `ask_question` tool is missing, or you run as a subagent or a headless (`-p`) session where the user cannot reply, do not ask in plain text and stop. Wherever this skill says to ask, pick the option marked recommended (otherwise the first option, or the answer the context makes most likely), state the choice and the reason in one line, and carry on to the deliverable. If that option would delete, push, or discard work, pick the safer option instead.
+
 ## Activation Triggers
 
 - "confused", "I'm confused", "this is confusing"

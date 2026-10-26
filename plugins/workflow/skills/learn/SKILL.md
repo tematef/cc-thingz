@@ -8,6 +8,10 @@ allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, gre
 
 Review the current conversation history and identify strategic, reusable project knowledge that should be captured in the project's `GEMINI.md` or `AGENTS.md` file. When the project has opted into local or machine-specific rules (e.g. `GEMINI.local.md` or `.agents/rules/local.md`), route genuinely personal or environment-specific discoveries there instead.
 
+## When no one can answer
+
+If the `ask_question` tool is missing, or you run as a subagent or a headless (`-p`) session where the user cannot reply, do not ask in plain text and stop. Wherever this skill says to ask, pick the option marked recommended (otherwise the first option, or the answer the context makes most likely), state the choice and the reason in one line, and carry on to the deliverable. If that option would delete, push, or discard work, pick the safer option instead.
+
 ## Analysis Process
 
 1. **Review Session History**

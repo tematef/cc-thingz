@@ -8,6 +8,10 @@ allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, gre
 
 Execute plan file tasks sequentially, each in an isolated subagent.
 
+## When no one can answer
+
+If the `ask_question` tool is missing, or you run as a subagent or a headless (`-p`) session where the user cannot reply, do not ask in plain text and stop. Wherever this skill says to ask, pick the option marked recommended (otherwise the first option, or the answer the context makes most likely), state the choice and the reason in one line, and carry on to the deliverable. If that option would delete, push, or discard work, pick the safer option instead.
+
 ## Arguments
 
 - `$ARGUMENTS` — path to plan file (optional; if omitted, ask user to pick from the resolved plans directory — see Step 1)
@@ -91,7 +95,7 @@ First detect current branch state — run `git branch --show-current` and compar
 }
 ```
 
-In BOTH cases: invoke the ask_question tool **now**, do not generate text first, do not skip, do not assume. Auto mode does NOT exempt this question — the choice affects the user's working directory and the orchestrator cannot decide on their behalf.
+In BOTH cases: invoke the ask_question tool **now**, do not generate text first, do not skip, do not assume. Auto mode does NOT exempt this question — the choice affects the user's working directory and the orchestrator cannot decide on their behalf. The only exception is the "When no one can answer" case above: then pick "In-place" (Case A) or "Stay here" (Case B), because the caller already chose this directory, and log it as a `[decision]` once the progress file exists (Step 5).
 
 **If the user picks "Worktree (isolated)" or "Move to worktree"** — the main working directory MUST NOT be touched at all: no branch is created or checked out there, and no file changes land there. That isolation is the entire point of this mode. Set `worktree_mode = true` and do this:
 

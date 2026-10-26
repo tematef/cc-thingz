@@ -8,6 +8,10 @@ allowed-tools: view_file, write_to_file, replace_file_content, find_by_name, gre
 
 create an implementation plan in `<plans-dir>/yyyymmdd-<task-name>.md` (the project's `docs/plans/`, resolved in step 2) with interactive context gathering. the user's request (the text after "make a plan", or the context handed over by brainstorm) describes the feature or task to plan.
 
+## When no one can answer
+
+If the `ask_question` tool is missing, or you run as a subagent or a headless (`-p`) session where the user cannot reply, do not ask in plain text and stop. Wherever this skill says to ask, pick the option marked recommended (otherwise the first option, or the answer the context makes most likely), state the choice and the reason in one line, and carry on to the deliverable. If that option would delete, push, or discard work, pick the safer option instead.
+
 ## custom rules loading
 
 before starting, run this command via run_command tool to check for user-provided custom rules:

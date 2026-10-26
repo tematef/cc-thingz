@@ -11,6 +11,10 @@ introduce, drift with no user-visible symptom, a fix whose blast radius exceeded
 keeping. One file per item. It is the maintainer's own list — it never gates anything and never reaches a
 contributor.
 
+## When no one can answer
+
+If the `ask_question` tool is missing, or you run as a subagent or a headless (`-p`) session where the user cannot reply, do not ask in plain text and stop. Wherever this skill says to ask, pick the option marked recommended (otherwise the first option, or the answer the context makes most likely), state the choice and the reason in one line, and carry on to the deliverable. If that option would delete, push, or discard work, pick the safer option instead.
+
 ## Location
 
 Resolve the backlog directory first, running from the workspace directory the session was started in — never a
