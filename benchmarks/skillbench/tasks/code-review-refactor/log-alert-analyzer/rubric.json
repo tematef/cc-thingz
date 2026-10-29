@@ -1,0 +1,22 @@
+[
+  {
+    "id": "shared_log_parser",
+    "criterion": "Extracts a shared log-line parsing and severity-normalization helper in logwatch/analyzer.py used by both analyze_log_lines and filter_critical_events instead of duplicating string-splitting and field-conversion logic."
+  },
+  {
+    "id": "decomposed_aggregation_and_alerting",
+    "criterion": "Decomposes analyze_log_lines into smaller, focused helper functions (such as per-service metric aggregation and service status/alert classification) with clear, descriptive variable and function names."
+  },
+  {
+    "id": "named_threshold_constants",
+    "criterion": "Extracts magic numbers and alert rules (severity alias mappings, error-rate thresholds 0.20 and 0.05, latency threshold 1000ms, HTTP 500 status cutoff, and 5xx count threshold) into named constants."
+  },
+  {
+    "id": "backward_compatible_behavior",
+    "criterion": "Preserves the public signatures and exact return structures of analyze_log_lines, filter_critical_events, and render_markdown_summary so all existing unit tests in tests/test_analyzer.py pass."
+  },
+  {
+    "id": "added_tests_and_explanation",
+    "criterion": "Adds unit tests in tests/ covering the extracted parsing or classification helpers and provides a clear summary of the refactorings performed."
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "design_doc_written",
+    "criterion": "Produces a design document under docs/plans/ (or complete design specification in the response) while leaving ledgerbus/ source files untouched."
+  },
+  {
+    "id": "grounds_in_ledgerbus",
+    "criterion": "References ledgerbus/service.py (LedgerService, LedgerEntry, EventSink) and explains the dual-write failure mode between state mutation and event publication."
+  },
+  {
+    "id": "compares_delivery_architectures",
+    "criterion": "Compares at least two candidate designs (such as synchronous transactional outbox buffer with explicit flush vs change-log cursor tailing vs two-phase callback) and states their trade-offs."
+  },
+  {
+    "id": "idempotency_and_ordering",
+    "criterion": "Specifies how monotonic sequence numbers or event IDs preserve per-account ordering and allow downstream consumers to deduplicate replayed messages."
+  },
+  {
+    "id": "test_strategy_specified",
+    "criterion": "Defines test scenarios verifying atomic rollback on state validation error, retry of pending outbox entries after transient sink failure, and duplicate suppression."
+  }
+]

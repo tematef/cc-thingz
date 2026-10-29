@@ -1,0 +1,22 @@
+[
+  {
+    "id": "plan_file_created",
+    "criterion": "Creates a Markdown implementation plan under docs/plans/ (or presents a complete plan targeting docs/plans/) without modifying source files in walletcore/."
+  },
+  {
+    "id": "grounded_in_walletcore",
+    "criterion": "References walletcore/ledger.py (WalletLedger, TransferRequest, TransferReceipt) and tests/test_ledger.py by their exact names."
+  },
+  {
+    "id": "idempotency_and_payload_mismatch",
+    "criterion": "Specifies idempotency-key handling: returning the original TransferReceipt when the same key and parameters are re-submitted, and rejecting requests that reuse an idempotency key with different transfer parameters."
+  },
+  {
+    "id": "atomic_multi_leg_and_balance_check",
+    "criterion": "Specifies validation that prevents negative balances on debit accounts and ensures multi-leg transfers either apply all legs atomically or roll back completely on any leg failure."
+  },
+  {
+    "id": "test_cases_enumerated",
+    "criterion": "Lists concrete unit test cases in tests/ covering duplicate idempotency replay, conflicting payload rejection, overdraft rejection, and atomic multi-leg rollback."
+  }
+]

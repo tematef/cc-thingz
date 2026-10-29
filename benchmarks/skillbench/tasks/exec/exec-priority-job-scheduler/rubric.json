@@ -1,0 +1,22 @@
+[
+  {
+    "id": "priority_and_fifo_tiebreak",
+    "criterion": "Selects the highest-priority ready job in JobScheduler.pop_ready() (higher priority integer first, breaking ties by submission order)."
+  },
+  {
+    "id": "dependency_gating",
+    "criterion": "Holds jobs whose depends_on set contains uncompleted job IDs until all prerequisites are marked completed via JobScheduler.mark_completed(job_id)."
+  },
+  {
+    "id": "cancellation_support",
+    "criterion": "Implements JobScheduler.cancel(job_id) so cancelled jobs are never returned by pop_ready()."
+  },
+  {
+    "id": "unit_tests_written",
+    "criterion": "Adds unit tests under tests/ covering priority ordering, FIFO tie-breaking, multi-step dependency unlocking, and job cancellation."
+  },
+  {
+    "id": "all_tests_pass",
+    "criterion": "All unit tests in tests/ pass when run with python3 -m unittest discover -s tests."
+  }
+]

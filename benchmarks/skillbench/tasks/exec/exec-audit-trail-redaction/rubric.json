@@ -1,0 +1,22 @@
+[
+  {
+    "id": "recursive_redaction_implemented",
+    "criterion": "Redacts sensitive keys (such as password, secret, api_key, token, authorization) case-insensitively across nested dicts and lists in auditlog/logger.py without mutating the caller's input dictionary."
+  },
+  {
+    "id": "hash_chain_and_verify_integrity",
+    "criterion": "Computes a deterministic SHA-256 entry_hash chaining prev_hash (starting from 'GENESIS') across recorded entries and implements AuditLogger.verify_chain() to detect tampered payloads or hashes."
+  },
+  {
+    "id": "existing_baseline_preserved",
+    "criterion": "Preserves existing AuditLogger.record and AuditLogger.entries behavior so tests/test_baseline.py continues to pass."
+  },
+  {
+    "id": "new_unit_tests_added",
+    "criterion": "Adds unit tests under tests/ covering nested structure redaction, input immutability, valid hash chain verification, and tamper detection."
+  },
+  {
+    "id": "all_tests_pass",
+    "criterion": "All unit tests in tests/ pass when run with python3 -m unittest discover -s tests."
+  }
+]

@@ -1,0 +1,18 @@
+kind = "suite"
+family = "planning"
+pilot = false
+timeout = 900
+verify = "python3 -m unittest discover -s tests -q"
+verify_restore = ["tests/test_engine.py"]
+prompt = """Design, plan, and implement a transactional outbox and idempotent relay in outboxrelay/engine.py: OrderStore.create_order must stage both the order record and an OutboxRecord atomically, and OutboxRelay.flush_pending(publisher) must publish pending records in creation order, mark succeeded records as sent, and increment attempt counts on failure without losing or reordering events. Write the plan in docs/plans/, implement the changes in outboxrelay/, and ensure all unit tests pass."""
+asks_user = true
+user_answers = [
+  "Keep everything in-process using the Python standard library only; write a design/implementation plan under docs/plans/ first, then implement the feature and unit tests in the package.",
+  "Preserve all existing public classes and method signatures so current callers continue to work without changes.",
+  "Use injectable clock/callable hooks so all tests run deterministically in milliseconds.",
+  "Write unit tests with stdlib unittest covering both normal paths and failure/edge cases.",
+  "Proceed with the recommended design, write the plan under docs/plans/, implement all steps in the package, and verify that unittest passes.",
+  "Keep all changes local to the working tree without running git push.",
+]
+forbidden_terms = [
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "plan_artifact_written",
+    "criterion": "Creates a plan document under docs/plans/ (active or completed/) outlining the DeadLetterVault and replay_dead_letters design before or alongside the implementation."
+  },
+  {
+    "id": "dead_letter_capture_on_exhaustion",
+    "criterion": "Captures messages that fail max_attempts in dlqbroker/broker.py with attempt count and last error details instead of silently dropping them."
+  },
+  {
+    "id": "selective_idempotent_replay",
+    "criterion": "Implements replay_dead_letters (or equivalent replay method on MessageBroker) supporting a filter predicate, removing newly succeeded items from the dead-letter store and skipping message IDs that already succeeded."
+  },
+  {
+    "id": "existing_and_new_tests_pass",
+    "criterion": "Preserves existing MessageBroker behavior in tests/test_broker.py and adds new unit tests covering dead-letter capture, filtered replay recovery, and duplicate prevention."
+  },
+  {
+    "id": "clean_verification",
+    "criterion": "All unit tests under tests/ pass when executed with python3 -m unittest discover -s tests."
+  }
+]

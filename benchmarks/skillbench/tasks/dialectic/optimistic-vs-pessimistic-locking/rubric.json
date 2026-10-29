@@ -1,0 +1,22 @@
+[
+  {
+    "id": "grounds_in_stocklock",
+    "criterion": "References stocklock/inventory.py (InventoryTable, SkuSlot, reserve_items) and examines how multi-item cart reservations acquire locks and validate stock."
+  },
+  {
+    "id": "arguments_for_optimistic",
+    "criterion": "Presents the case for optimistic concurrency: avoids lock-ordering deadlock risks across multi-SKU carts and eliminates blocking overhead when contention across distinct SKUs is low."
+  },
+  {
+    "id": "arguments_for_pessimistic",
+    "criterion": "Presents the counter-case under flash-sale skew: when hundreds of callers contend for the same hot SKU, optimistic CAS retries suffer livelock and wasted work whereas serialized per-SKU locking makes guaranteed progress."
+  },
+  {
+    "id": "analyzes_multi_sku_deadlock_and_skew",
+    "criterion": "Contrasts multi-SKU cart lock ordering (which sorted key acquisition solves in pessimistic mode) against hot-key retry storms in optimistic mode."
+  },
+  {
+    "id": "synthesizes_decision_boundary",
+    "criterion": "States a clear decision rule based on contention skew and retry budget (e.g., sorted per-SKU pessimistic locks for hot flash-sale SKUs vs optimistic version checks for long-tail catalog items)."
+  }
+]

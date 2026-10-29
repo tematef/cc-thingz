@@ -1,0 +1,22 @@
+[
+  {
+    "id": "extracts_sampling_and_stats_helpers",
+    "criterion": "Extracts reusable sample filtering, sorting, and percentile/mean calculation helpers in telemetryrollup/rollup.py."
+  },
+  {
+    "id": "eliminates_duplicated_status_classification",
+    "criterion": "Unifies the threshold classification ('CRITICAL', 'WARN', 'OK') and empty-sample fallback logic shared by summarize_latency_samples and summarize_error_samples."
+  },
+  {
+    "id": "preserves_public_api_contract",
+    "criterion": "Maintains the exact function signatures and output dictionaries for summarize_latency_samples, summarize_error_samples, and render_badge so tests/test_rollup.py passes."
+  },
+  {
+    "id": "adds_focused_helper_tests",
+    "criterion": "Adds unit tests in tests/ covering the extracted statistical and classification helpers, including empty/negative sample filtering."
+  },
+  {
+    "id": "all_tests_pass",
+    "criterion": "All unit tests under tests/ pass when executed with python3 -m unittest discover -s tests."
+  }
+]

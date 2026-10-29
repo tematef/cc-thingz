@@ -1,0 +1,10 @@
+target_skill = "code-review-refactor"
+pilot = false
+timeout = 900
+verify = "python3 -m unittest discover -s tests -q"
+verify_restore = ["tests/__init__.py", "tests/test_rollup.py"]
+prompt = """telemetryrollup/rollup.py contains deeply nested loops and duplicated percentile, anomaly threshold, and formatting logic across summarize_latency_samples and summarize_error_samples. Refactor telemetryrollup/rollup.py into clean, composable helper functions while keeping the public API (summarize_latency_samples, summarize_error_samples, render_badge) and exact behavior intact. Make sure all existing tests pass and add unit tests for the new helpers."""
+asks_user = false
+forbidden_terms = [
+  "code-review-refactor",
+]

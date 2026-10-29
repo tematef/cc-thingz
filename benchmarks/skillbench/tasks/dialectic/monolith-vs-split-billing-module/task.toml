@@ -1,0 +1,14 @@
+target_skill = "dialectic"
+pilot = false
+timeout = 900
+prompt = """Evaluate both sides of this proposal for billengine/: 'Splitting UsageMeter and InvoiceBuilder into two separate deployable services communicating over JSON RPC will decouple usage ingestion from invoice generation without downsides.' Analyze billengine/billing.py to prove and counter-prove the claim and deliver a synthesis."""
+asks_user = true
+user_answers = [
+  "Evaluate the claim directly against the code and workload constraints in this repository.",
+  "Include concrete code evidence from the fixture modules for both the argument in favor and the counter-argument.",
+  "Synthesize a conditional recommendation specifying the exact threshold or conditions where each side wins.",
+  "No code changes are needed; deliver the structured analysis.",
+]
+forbidden_terms = [
+  "dialectic",
+]

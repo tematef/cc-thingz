@@ -1,0 +1,22 @@
+[
+  {
+    "id": "grounds_in_billengine",
+    "criterion": "References billengine/billing.py (UsageMeter, InvoiceBuilder, close_billing_period) and identifies how close_billing_period atomically freezes metered counters while generating line items."
+  },
+  {
+    "id": "case_for_splitting",
+    "criterion": "Presents the strongest case for service separation: independent scaling of high-frequency usage event ingestion vs end-of-month invoice batch computation, plus fault isolation."
+  },
+  {
+    "id": "case_against_splitting",
+    "criterion": "Presents the strongest counter-case grounded in close_billing_period: replacing an in-process atomic cutover with cross-service RPC introduces distributed consistency hazards (late-arriving events, partial freeze failure, network serialization cost)."
+  },
+  {
+    "id": "evaluates_cutover_invariant",
+    "criterion": "Explains what invariant close_billing_period currently relies on (shared in-process state freeze) and what watermark/idempotency machinery a split architecture would require to preserve it."
+  },
+  {
+    "id": "synthesizes_pragmatic_path",
+    "criterion": "Concludes with a grounded recommendation (e.g., keeping shared storage/immutable period watermarks within a modular monolith until ingestion scale forces separate worker processes)."
+  }
+]

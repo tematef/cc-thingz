@@ -1,0 +1,20 @@
+target_skill = "make-plan"
+pilot = true
+timeout = 900
+prompt = """We need to add a bounded retry policy with exponential backoff and dead-letter recording for failed outbound webhook deliveries in hookrelay. Please write a detailed implementation plan in docs/plans/ for this feature before any code is modified."""
+user_answers = [
+  "Add automatic retry with exponential backoff for transient delivery failures (HTTP 5xx, HTTP 429, and transport timeouts) and store exhausted events in an in-memory dead-letter store.",
+  "Keep changes inside hookrelay/ (update dispatcher.py and models.py, and add a retry/dead-letter module) plus unit tests under tests/.",
+  "Standard library only, configurable max_attempts (default 3) and base_delay_s, an injectable sleep/clock callable for fast deterministic tests, and never retry 4xx client errors other than 429.",
+  "TDD (write unit tests first using stdlib unittest).",
+  "Webhook Retry Backoff and Dead-Letter Queue",
+  "Use the recommended in-process design; once the plan file is written in docs/plans/, stop without starting implementation.",
+]
+forbidden_terms = [
+  "make-plan",
+  "resolve-project-dir",
+  "resolve-rules",
+  "plan-review",
+  "revdiff",
+  "plan-annotate",
+]

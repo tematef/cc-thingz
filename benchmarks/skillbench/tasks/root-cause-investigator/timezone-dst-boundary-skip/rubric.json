@@ -1,0 +1,22 @@
+[
+  {
+    "id": "identifies_utc_timedelta_defect",
+    "criterion": "Pinpoints the defect in billsched/planner.py (next_run_utc) where advancing by timedelta(hours=24) in UTC shifts the wall-clock local hour across a DST offset change instead of anchoring the recurrence in the subscriber's ZoneInfo timezone."
+  },
+  {
+    "id": "identifies_dedup_window_defect",
+    "criterion": "Pinpoints the second defect in billsched/dedup.py (ExecutionWindowGuard.should_run) where deduplication hashes the local calendar date alongside the UTC hour (dt_utc.strftime('%Y-%m-%d:%H')), causing a shifted UTC hour after DST change to bypass or collide with the guard."
+  },
+  {
+    "id": "explains_compound_interaction",
+    "criterion": "Explains how the two defects interact across the spring-forward (+1h offset change) and fall-back (-1h offset change) transitions to skip a billing window or trigger a duplicate run."
+  },
+  {
+    "id": "grounds_in_symbols",
+    "criterion": "References the exact files and symbols: billsched/planner.py (BillingPlanner, SubscriptionRule, next_run_utc) and billsched/dedup.py (ExecutionWindowGuard)."
+  },
+  {
+    "id": "remediation_specified",
+    "criterion": "Specifies the fix: computing calendar-day addition in the subscriber's local ZoneInfo timezone before converting back to UTC, and keying ExecutionWindowGuard by subscription_id and local billing date."
+  }
+]

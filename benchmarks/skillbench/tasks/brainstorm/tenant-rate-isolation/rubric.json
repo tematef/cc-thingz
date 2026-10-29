@@ -1,0 +1,22 @@
+[
+  {
+    "id": "design_doc_written",
+    "criterion": "Creates a design document under docs/plans/ (or complete design specification in the response) without modifying production files in gatekeeper/."
+  },
+  {
+    "id": "grounds_in_gatekeeper",
+    "criterion": "References gatekeeper/router.py (RequestRouter, TenantPolicy, DispatchOutcome) and explains how concurrent slow requests saturate the global pool despite minute-window counters."
+  },
+  {
+    "id": "compares_isolation_models",
+    "criterion": "Compares at least two isolation approaches (such as per-tenant in-flight bulkheads with reserved capacity vs weighted fair queuing vs adaptive concurrency limits) with clear trade-offs."
+  },
+  {
+    "id": "specifies_admission_and_borrowing",
+    "criterion": "Defines how idle capacity is shared during low load while guaranteeing a minimum reserved concurrency floor or cap per tenant under contention."
+  },
+  {
+    "id": "test_scenarios_outlined",
+    "criterion": "Outlines deterministic test cases covering noisy-neighbor saturation, burst admission, and recovery when in-flight requests complete."
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "identifies_float_conversion_defect",
+    "criterion": "Pinpoints the defect in finsplit/allocator.py (allocate_shares) where integer cents are converted to binary float and rounded independently per share via round(), losing remainder cents instead of distributing largest-remainder integer cents."
+  },
+  {
+    "id": "identifies_premature_line_discount_rounding",
+    "criterion": "Pinpoints the second defect in finsplit/reconciler.py (Reconciler.verify_invoice) where invoice-level discount is computed on the aggregate subtotal while allocate_shares applies and rounds the discount on each individual share prior to summation."
+  },
+  {
+    "id": "explains_interaction",
+    "criterion": "Explains how per-share discount rounding and unallocated remainder cents compound so sum(allocated_cents) diverges from net_invoice_cents even when weights sum to 100%."
+  },
+  {
+    "id": "grounds_in_files_and_functions",
+    "criterion": "References finsplit/allocator.py (CostShare, allocate_shares) and finsplit/reconciler.py (InvoiceSummary, Reconciler.verify_invoice)."
+  },
+  {
+    "id": "remediation_proposed",
+    "criterion": "Describes the fix: computing discounts once on the invoice total (or allocating post-discount net integer cents) and distributing integer remainder cents deterministically across shares."
+  }
+]

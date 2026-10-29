@@ -1,0 +1,22 @@
+[
+  {
+    "id": "sliding_window_pruning",
+    "criterion": "Prunes expired events outside [now - window_s, now] using the injected clock callable in ratelimiter/quota.py before evaluating admission."
+  },
+  {
+    "id": "weighted_cost_and_retry_after",
+    "criterion": "Supports variable request cost in QuotaLimiter.check_and_consume(key, cost=1) and computes retry_after_s as the exact time until enough old cost expires when a request is rejected."
+  },
+  {
+    "id": "atomic_rejection",
+    "criterion": "Ensures rejected requests do not record partial cost in the sliding window so subsequent smaller requests that fit within remaining capacity still succeed."
+  },
+  {
+    "id": "unit_tests_cover_edge_cases",
+    "criterion": "Adds unit tests under tests/ verifying sliding-window expiration, multi-unit cost rejection, accurate retry_after_s, and non-mutation on rejected requests."
+  },
+  {
+    "id": "all_tests_pass",
+    "criterion": "All unit tests under tests/ pass via python3 -m unittest discover -s tests."
+  }
+]

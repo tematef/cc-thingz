@@ -1,0 +1,22 @@
+[
+  {
+    "id": "design_doc_written",
+    "criterion": "Produces a design document in docs/plans/ (or complete design specification in the response) without altering existing production files under catalogcache/."
+  },
+  {
+    "id": "grounds_in_catalogcache",
+    "criterion": "References the existing classes and methods in catalogcache/store.py (CatalogStore, BundleCache, SkuRecord, BundleView) and identifies the missing SKU-to-bundle reverse index."
+  },
+  {
+    "id": "compares_approaches",
+    "criterion": "Evaluates at least two distinct invalidation strategies (such as explicit reverse-dependency index vs version-epoch tagging vs TTL-only) with concrete complexity and memory trade-offs."
+  },
+  {
+    "id": "handles_shared_skus_and_eviction",
+    "criterion": "Addresses edge cases where one SKU belongs to multiple bundles and ensures reverse-index entries are cleaned up when bundles are evicted or rebuilt."
+  },
+  {
+    "id": "verification_plan_defined",
+    "criterion": "Specifies deterministic unit test scenarios covering single-SKU updates, multi-bundle shared SKUs, and cache re-population after invalidation."
+  }
+]

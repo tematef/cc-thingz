@@ -1,0 +1,22 @@
+[
+  {
+    "id": "recursive_dot_path_diff",
+    "criterion": "Recursively traverses nested dicts in diff_snapshots(before, after) emitting ChangeEntry records with dot-separated paths (e.g. 'db.pool.max_size') sorted by path."
+  },
+  {
+    "id": "apply_and_revert_patch",
+    "criterion": "Implements apply_diff(base, changes) and revert_diff(target, changes) in statecfg/differ.py without mutating the input dictionaries."
+  },
+  {
+    "id": "handles_nested_creation_and_removal",
+    "criterion": "Cleanly handles added, modified, and removed nested keys when applying and reverting patches."
+  },
+  {
+    "id": "unit_tests_added",
+    "criterion": "Adds unit tests under tests/ verifying nested dot-path generation, round-trip apply_diff/revert_diff equivalence, and input immutability."
+  },
+  {
+    "id": "all_tests_pass",
+    "criterion": "All unit tests in tests/ pass when executed with python3 -m unittest discover -s tests."
+  }
+]

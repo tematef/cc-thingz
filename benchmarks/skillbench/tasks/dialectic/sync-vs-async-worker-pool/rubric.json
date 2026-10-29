@@ -1,0 +1,22 @@
+[
+  {
+    "id": "grounds_in_ingestpool",
+    "criterion": "References ingestpool/pipeline.py (BatchIngestor, parse_and_checksum, post_metadata) and identifies the mix of CPU-bound SHA-256/JSON parsing work and I/O wait."
+  },
+  {
+    "id": "case_for_asyncio",
+    "criterion": "Presents the strongest technical case supporting the claim: reduced thread context-switching and memory overhead when waiting on high-concurrency network I/O in post_metadata."
+  },
+  {
+    "id": "counter_case_against_asyncio",
+    "criterion": "Presents the strongest counter-argument grounded in the code: CPU-bound synchronous work in parse_and_checksum blocks a single-threaded event loop under the GIL and worsens tail latency unless offloaded to an executor."
+  },
+  {
+    "id": "quantifies_bottleneck_conditions",
+    "criterion": "Analyzes how payload size, CPU time per record vs network RTT in ingestpool/pipeline.py shift the bottleneck between I/O concurrency and CPU saturation."
+  },
+  {
+    "id": "balanced_synthesis",
+    "criterion": "Concludes with a conditional synthesis (e.g., hybrid async I/O with process/thread offloading for CPU-heavy checksums, or retaining bounded threads when concurrency is small)."
+  }
+]

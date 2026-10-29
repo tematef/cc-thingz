@@ -1,0 +1,16 @@
+target_skill = "brainstorm"
+pilot = false
+timeout = 900
+prompt = """In gatekeeper/, a single noisy tenant can exhaust the shared worker pool in RequestRouter even when per-tenant request counters are below their individual per-minute quota. Let's explore design options for fair tenant concurrency and burst isolation in gatekeeper/ and capture the chosen architecture in docs/plans/ without editing gatekeeper/ yet."""
+asks_user = true
+user_answers = [
+  "Keep the design strictly in-process using Python standard library primitives so no external broker or database is required.",
+  "Prioritize deterministic behavior and sub-millisecond read latency over cross-process sharing; provide injectable time and callback hooks.",
+  "Include concrete trade-offs between at least two candidate architectures before selecting the recommended design.",
+  "Write the final design document under docs/plans/ and stop before modifying production modules.",
+  "Approve the recommended architecture and component interfaces as proposed.",
+]
+forbidden_terms = [
+  "brainstorm",
+  "resolve-rules",
+]

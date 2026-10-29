@@ -1,0 +1,16 @@
+target_skill = "brainstorm"
+pilot = false
+timeout = 900
+prompt = """In profiledb/, UserProfileStore stores customer contact fields in a legacy single-string format, and we need to transition readers and writers to a structured ContactAddress record while both v1 and v2 callers operate concurrently in the same process. Explore the expand-contract design options for profiledb/ and write a design specification in docs/plans/ without editing profiledb/ source code."""
+asks_user = true
+user_answers = [
+  "Keep the design strictly in-process using Python standard library primitives so no external broker or database is required.",
+  "Prioritize deterministic behavior and sub-millisecond read latency over cross-process sharing; provide injectable time and callback hooks.",
+  "Include concrete trade-offs between at least two candidate architectures before selecting the recommended design.",
+  "Write the final design document under docs/plans/ and stop before modifying production modules.",
+  "Approve the recommended architecture and component interfaces as proposed.",
+]
+forbidden_terms = [
+  "brainstorm",
+  "resolve-rules",
+]

@@ -1,0 +1,10 @@
+target_skill = "root-cause-investigator"
+pilot = true
+timeout = 600
+prompt = """In this repository, tests/test_worker.py has a failing test where retrying a settlement batch after a mid-batch gateway timeout charges the first invoice twice, even though the payment gateway supports idempotency keys and the ledger tracks settled invoices. Investigate the codebase to determine why both safeguards fail and write a complete root-cause analysis (do not modify the source files)."""
+forbidden_terms = [
+  "root-cause-investigator",
+  "5-why",
+  "five whys",
+  "why #1",
+]

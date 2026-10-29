@@ -1,0 +1,16 @@
+target_skill = "brainstorm"
+pilot = false
+timeout = 900
+prompt = """Our catalog service in catalogcache/ serves product bundles built from individual SKU records, but updating a single SKU in CatalogStore leaves stale bundle entries in BundleCache because reverse dependencies are never tracked. Help me think through the design options and trade-offs for dependency-aware cache invalidation and write a design document under docs/plans/ without changing the code in catalogcache/ yet."""
+asks_user = true
+user_answers = [
+  "Keep the design strictly in-process using Python standard library primitives so no external broker or database is required.",
+  "Prioritize deterministic behavior and sub-millisecond read latency over cross-process sharing; provide injectable time and callback hooks.",
+  "Include concrete trade-offs between at least two candidate architectures before selecting the recommended design.",
+  "Write the final design document under docs/plans/ and stop before modifying production modules.",
+  "Approve the recommended architecture and component interfaces as proposed.",
+]
+forbidden_terms = [
+  "brainstorm",
+  "resolve-rules",
+]

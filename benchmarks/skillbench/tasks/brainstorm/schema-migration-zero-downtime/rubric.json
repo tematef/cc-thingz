@@ -1,0 +1,22 @@
+[
+  {
+    "id": "design_doc_written",
+    "criterion": "Writes a design specification under docs/plans/ (or complete design specification in the response) without modifying files in profiledb/."
+  },
+  {
+    "id": "grounds_in_profiledb",
+    "criterion": "References profiledb/repository.py (UserProfileStore, LegacyProfile) and identifies how v1 and v2 readers/writers interact on the same underlying records."
+  },
+  {
+    "id": "compares_migration_strategies",
+    "criterion": "Evaluates at least two migration strategies (such as dual-write with lazy read-repair backfill vs eager stop-the-world batch conversion vs versioned view adapters) and their trade-offs."
+  },
+  {
+    "id": "consistency_and_rollback",
+    "criterion": "Specifies how writes from v1 callers keep v2 fields synchronized (and vice versa) during the transition phase so rollbacks do not lose updates."
+  },
+  {
+    "id": "verification_criteria",
+    "criterion": "Defines unit test cases for mixed v1/v2 read-after-write consistency, background backfill completion, and contract-phase cutover."
+  }
+]

@@ -1,0 +1,11 @@
+target_skill = "code-review-refactor"
+pilot = true
+timeout = 900
+verify = "python3 -m unittest -q tests.test_analyzer"
+verify_restore = ["tests/__init__.py", "tests/test_analyzer.py"]
+prompt = """logwatch/analyzer.py contains heavy duplication between analyze_log_lines and filter_critical_events, cryptic variable names, hardcoded alert thresholds, and a monolithic aggregation loop. Refactor logwatch/analyzer.py to extract shared line-parsing and health-classification helpers, replace magic thresholds with named constants, and keep all public functions (analyze_log_lines, filter_critical_events, render_markdown_summary) backward-compatible. Run the unit tests in tests/ and add tests for the extracted components."""
+forbidden_terms = [
+  "code-review-refactor",
+  "code-agentic-refactor",
+  "code-review-best-practices",
+]

@@ -255,8 +255,18 @@ Ask `make-plan` or `brainstorm` to show, add or clear rules at either level (for
 │   ├── skill-eval/               # hooks.json + skill-forced-eval-hook.sh
 │   └── agterm-ide-launcher/
 ├── tests/                        # shell suites, run locally
+├── benchmarks/skillbench/        # skillbench suite.toml and 28-task evaluation corpus
 ├── docs/plans/, docs/backlog/    # this repo's own plans and backlog
 └── CHANGELOG.md                  # upstream history up to the fork
+```
+
+## Benchmarking skills (`benchmarks/skillbench/`)
+
+`benchmarks/skillbench/suite.toml` and `benchmarks/skillbench/tasks/` define the evaluation suite and 28-task corpus (`brainstorm`, `make-plan`, `exec`, `root-cause-investigator`, `dialectic`, `code-review-refactor`, and 4 end-to-end `_suite` planning tasks) used by `harness2` (`skillbench-tasks`, `skillbench-matrix`, `skillbench-report`, `skillbench-improve`, `skillbench-cycle`):
+
+```bash
+skillbench-tasks --suite benchmarks/skillbench/suite.toml check
+skillbench-cycle --suite benchmarks/skillbench/suite.toml --k 3 --arms both
 ```
 
 ## Testing

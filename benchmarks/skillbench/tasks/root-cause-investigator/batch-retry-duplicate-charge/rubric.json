@@ -1,0 +1,22 @@
+[
+  {
+    "id": "symptom_identified",
+    "criterion": "Identifies that invoice inv-101 succeeds on the first batch run before inv-102 raises GatewayTimeoutError, and is charged a second time when BatchWorker.process_batch retries batch-07."
+  },
+  {
+    "id": "idempotency_key_defect",
+    "criterion": "Pinpoints the defect in settleworker/worker.py (_build_idempotency_key / process_batch) where the idempotency key incorporates the per-attempt counter (_attempt_seq), producing a distinct key on retry so PaymentGateway.charge cannot deduplicate the request."
+  },
+  {
+    "id": "buffered_ledger_commit_defect",
+    "criterion": "Pinpoints the defect in settleworker/ledger.py (LedgerStore.mark_settled, commit, and rollback) and settleworker/worker.py where settled status updates are buffered in _pending_writes until the entire batch finishes, so a mid-batch exception rolls back inv-101's settled state and leaves it PENDING."
+  },
+  {
+    "id": "interaction_of_failures",
+    "criterion": "Explains how the two mechanisms interact: buffered batch-level ledger commits cause the retried batch to re-select inv-101 as PENDING, and the attempt-scoped idempotency key defeats the gateway's deduplication."
+  },
+  {
+    "id": "remediation_design",
+    "criterion": "Describes the necessary fixes for both safeguards: using a deterministic invoice-scoped idempotency key across retries and persisting/committing each invoice's settled state immediately after each successful gateway charge."
+  }
+]

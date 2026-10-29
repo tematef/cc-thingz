@@ -1,0 +1,22 @@
+[
+  {
+    "id": "deduplicated_pricing_pipeline",
+    "criterion": "Eliminates the duplicated validation, line-item discount, coupon, shipping, and tax calculation code between process_order and estimate_order in orderflow/processor.py by extracting shared helper function(s)."
+  },
+  {
+    "id": "named_constants_and_tables",
+    "criterion": "Replaces repeated inline magic numbers for quantity discount tiers, coupon rules, regional shipping thresholds/fees, and regional tax rates with named module-level constants or lookup tables."
+  },
+  {
+    "id": "reduced_nesting_and_clarity",
+    "criterion": "Flattens the deeply nested conditional blocks in orderflow/processor.py using guard clauses, early returns, or focused single-purpose functions with descriptive variable and function names."
+  },
+  {
+    "id": "public_api_and_behavior_preserved",
+    "criterion": "Preserves the signatures and external behavior of process_order, estimate_order, and format_receipt in orderflow/processor.py so all existing tests in tests/test_processor.py pass without regressions."
+  },
+  {
+    "id": "helper_tests_and_summary",
+    "criterion": "Adds unit tests in tests/ exercising the extracted helper functions or edge cases, and summarizes the refactoring changes made and why they improve maintainability."
+  }
+]

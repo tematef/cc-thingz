@@ -1,0 +1,22 @@
+[
+  {
+    "id": "plan_artifact_written",
+    "criterion": "Writes a plan document under docs/plans/ (active or completed/) describing the hierarchical org/project quota model and atomic reservation flow."
+  },
+  {
+    "id": "atomic_two_level_accounting",
+    "criterion": "Checks both project quota and parent organization quota before consuming capacity in tenantquota/enforcer.py, ensuring neither counter is incremented if either limit would be exceeded."
+  },
+  {
+    "id": "release_and_refund_support",
+    "criterion": "Provides a release/refund mechanism that returns consumed units to both the project and parent organization pools without dropping below zero."
+  },
+  {
+    "id": "comprehensive_unit_tests",
+    "criterion": "Adds unit tests under tests/ covering project-limit rejection, org-pool exhaustion across sibling projects, atomic non-mutation on failure, and capacity release."
+  },
+  {
+    "id": "clean_verification",
+    "criterion": "All unit tests in tests/ pass when run with python3 -m unittest discover -s tests."
+  }
+]

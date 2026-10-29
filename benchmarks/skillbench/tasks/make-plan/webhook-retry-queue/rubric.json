@@ -1,0 +1,26 @@
+[
+  {
+    "id": "plan_file_created",
+    "criterion": "A Markdown implementation plan file is created under docs/plans/ (or the deliverable presents a complete Markdown plan targeting docs/plans/) without modifying the existing production source files in hookrelay/."
+  },
+  {
+    "id": "grounded_in_repo",
+    "criterion": "The plan references the existing codebase components by their actual paths and symbols, including hookrelay/dispatcher.py (WebhookDispatcher), hookrelay/models.py (WebhookEvent or DeliveryResult), and hookrelay/transport.py (HttpSender)."
+  },
+  {
+    "id": "retry_classification_and_backoff",
+    "criterion": "The plan specifies the retry policy and backoff calculation: retrying transient failures (HTTP 5xx, HTTP 429, and transport/network errors) while not retrying other 4xx responses, with exponential backoff controlled by configurable max_attempts (default 3) and base_delay_s."
+  },
+  {
+    "id": "dead_letter_handling",
+    "criterion": "The plan defines a dead-letter store or mechanism that captures webhook events after they exhaust all retry attempts or fail permanently, preserving failure metadata such as the attempt count and the last error or status code."
+  },
+  {
+    "id": "injectable_clock_and_steps",
+    "criterion": "The plan includes an injectable clock or sleep callable for deterministic testing without real wall-clock waits, and breaks the work into sequential implementation tasks that name the specific files to create or modify."
+  },
+  {
+    "id": "verification_test_cases",
+    "criterion": "The plan specifies unit test cases in tests/ covering successful retry recovery after transient 5xx/429 failures, immediate non-retry on 400/404 responses, and dead-letter capture when max_attempts is exhausted."
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "deduplicates_tax_and_discount_logic",
+    "criterion": "Extracts shared subtotal, exemption discount, and tiered tax calculation helpers in taxrecon/reconciler.py instead of duplicating the logic across compute_domestic_invoice and compute_export_invoice."
+  },
+  {
+    "id": "replaces_magic_numbers_with_constants",
+    "criterion": "Replaces inline magic rate literals and thresholds (such as 0.0825, 0.06, 0.075, 10000, 500) with named constants or a jurisdiction table."
+  },
+  {
+    "id": "preserves_public_api_and_behavior",
+    "criterion": "Preserves the exact signatures and return dictionaries of compute_domestic_invoice, compute_export_invoice, and format_tax_line so tests/test_reconciler.py passes unchanged."
+  },
+  {
+    "id": "adds_helper_unit_tests",
+    "criterion": "Adds unit tests under tests/ that directly test the extracted helper functions and boundary conditions."
+  },
+  {
+    "id": "all_tests_pass",
+    "criterion": "All unit tests in tests/ pass when run with python3 -m unittest discover -s tests."
+  }
+]

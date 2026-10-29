@@ -1,0 +1,26 @@
+[
+  {
+    "id": "plan_file_created",
+    "criterion": "A Markdown implementation plan file is written under docs/plans/ (or provided in full in the deliverable) while leaving the existing source files in apigate/ unmodified."
+  },
+  {
+    "id": "grounded_in_repo",
+    "criterion": "The plan references the existing router and request/response types in apigate/router.py (Router.handle) and apigate/request.py (Request and Response)."
+  },
+  {
+    "id": "token_bucket_mechanics",
+    "criterion": "The plan specifies a token-bucket algorithm keyed by API key with configurable bucket capacity (burst size) and token refill rate per second, plus support for per-key limit overrides."
+  },
+  {
+    "id": "http_429_and_auth_ordering",
+    "criterion": "The plan specifies that rate limiting runs after API key authentication so missing or invalid keys still receive 401 without consuming tokens, and throttled requests receive status 429 with a Retry-After header computed from the time until the next token is available."
+  },
+  {
+    "id": "injectable_clock_and_task_breakdown",
+    "criterion": "The plan uses an injectable clock callable so token refill can be tested deterministically without sleeping, and organizes the implementation into ordered tasks that list the files to create or modify."
+  },
+  {
+    "id": "test_coverage_plan",
+    "criterion": "The plan details unit test scenarios covering burst allowance up to capacity, 429 rejection with accurate Retry-After when depleted, token replenishment as simulated time advances, isolation between distinct API keys, and 401 responses for invalid keys."
+  }
+]

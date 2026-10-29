@@ -1,0 +1,22 @@
+[
+  {
+    "id": "plan_file_created",
+    "criterion": "Creates a Markdown implementation plan in docs/plans/ (or presents a complete plan targeting docs/plans/) without modifying proxyguard/ source files."
+  },
+  {
+    "id": "grounded_in_proxyguard",
+    "criterion": "References proxyguard/client.py (UpstreamClient, UpstreamResponse, EndpointCallError) and tests/test_client.py accurately."
+  },
+  {
+    "id": "state_machine_transitions",
+    "criterion": "Defines the CLOSED -> OPEN -> HALF_OPEN -> CLOSED/OPEN state transitions controlled by consecutive failure threshold, cooldown duration, and single-probe recovery."
+  },
+  {
+    "id": "secondary_failover_and_clock",
+    "criterion": "Specifies automatic fallback to the secondary endpoint when the primary breaker is OPEN or trips, plus an injectable clock callable for deterministic cooldown testing."
+  },
+  {
+    "id": "verification_test_suite",
+    "criterion": "Lists unit tests covering breaker trip after consecutive errors, fast failover during cooldown, half-open probe recovery to CLOSED, and re-opening when a half-open probe fails."
+  }
+]

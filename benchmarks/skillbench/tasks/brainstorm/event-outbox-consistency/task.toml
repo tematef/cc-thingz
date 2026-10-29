@@ -1,0 +1,16 @@
+target_skill = "brainstorm"
+pilot = false
+timeout = 900
+prompt = """In ledgerbus/, LedgerService.record_entry writes to the in-memory state table and immediately publishes to EventSink, which leaves state and published events inconsistent whenever the sink raises a transient error or messages arrive out of order. Help me analyze architectural options for a transactional outbox and relay pattern in ledgerbus/ and write the design under docs/plans/ without modifying ledgerbus/ source files."""
+asks_user = true
+user_answers = [
+  "Keep the design strictly in-process using Python standard library primitives so no external broker or database is required.",
+  "Prioritize deterministic behavior and sub-millisecond read latency over cross-process sharing; provide injectable time and callback hooks.",
+  "Include concrete trade-offs between at least two candidate architectures before selecting the recommended design.",
+  "Write the final design document under docs/plans/ and stop before modifying production modules.",
+  "Approve the recommended architecture and component interfaces as proposed.",
+]
+forbidden_terms = [
+  "brainstorm",
+  "resolve-rules",
+]

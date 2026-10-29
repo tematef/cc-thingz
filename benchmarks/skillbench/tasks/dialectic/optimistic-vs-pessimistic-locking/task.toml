@@ -1,0 +1,14 @@
+target_skill = "dialectic"
+pilot = false
+timeout = 900
+prompt = """Stress test this architectural claim for our inventory reservation module in stocklock/: 'Switching InventoryTable from pessimistic per-SKU locks to optimistic version-checked retries will always improve reservation throughput under flash-sale traffic.' Argue both sides using stocklock/inventory.py and provide a grounded verdict."""
+asks_user = true
+user_answers = [
+  "Evaluate the claim directly against the code and workload constraints in this repository.",
+  "Include concrete code evidence from the fixture modules for both the argument in favor and the counter-argument.",
+  "Synthesize a conditional recommendation specifying the exact threshold or conditions where each side wins.",
+  "No code changes are needed; deliver the structured analysis.",
+]
+forbidden_terms = [
+  "dialectic",
+]

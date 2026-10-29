@@ -1,0 +1,20 @@
+target_skill = "make-plan"
+pilot = true
+timeout = 900
+prompt = """We want to add per-API-key rate limiting to our HTTP request router in apigate so clients exceeding their quota receive a 429 Too Many Requests response with a Retry-After header. Please create a detailed implementation plan in docs/plans/ for this feature before any code is modified."""
+user_answers = [
+  "Enforce per-API-key token-bucket rate limiting in the router before dispatching to route handlers, returning HTTP 429 with a Retry-After header when a bucket is empty.",
+  "Add a rate limiter module under apigate/ (such as apigate/ratelimit.py), integrate it into apigate/router.py, and add unit tests under tests/.",
+  "Standard library only, configurable capacity (burst) and refill_rate (tokens per second) with optional per-key overrides, injectable monotonic clock, and unauthenticated requests must still return 401 without consuming tokens.",
+  "TDD (tests first with stdlib unittest).",
+  "Per-API-Key Token Bucket Rate Limiting",
+  "Proceed with the recommended design; write the plan file under docs/plans/ and do not start implementing the feature.",
+]
+forbidden_terms = [
+  "make-plan",
+  "resolve-project-dir",
+  "resolve-rules",
+  "plan-review",
+  "revdiff",
+  "plan-annotate",
+]

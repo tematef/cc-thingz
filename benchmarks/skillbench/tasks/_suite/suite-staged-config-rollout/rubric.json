@@ -1,0 +1,22 @@
+[
+  {
+    "id": "plan_artifact_written",
+    "criterion": "Writes a plan file under docs/plans/ (active or completed/) specifying deterministic subject bucketing and automatic error-rate rollback."
+  },
+  {
+    "id": "deterministic_hash_bucketing",
+    "criterion": "Implements deterministic SHA-256 bucketing in FlagController.evaluate(flag_key, subject_id) so the same (flag_key, subject_id) pair consistently maps to [0, 100) and respects rollout_pct."
+  },
+  {
+    "id": "auto_rollback_on_error_budget",
+    "criterion": "Tracks sample count and error count in record_outcome(flag_key, error_occurred) and automatically disables the flag when sample_count >= min_samples and error_rate > max_error_rate."
+  },
+  {
+    "id": "unit_tests_for_bucketing_and_rollback",
+    "criterion": "Adds unit tests under tests/ covering 0%/100%/partial rollout stability, below-min_samples immunity, and automatic rollback when the error threshold is breached."
+  },
+  {
+    "id": "clean_verification",
+    "criterion": "All unit tests under tests/ pass when run with python3 -m unittest discover -s tests."
+  }
+]

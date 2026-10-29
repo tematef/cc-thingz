@@ -1,0 +1,22 @@
+[
+  {
+    "id": "grounds_in_sessionvault",
+    "criterion": "References sessionvault/store.py (SessionStore, SessionToken, validate_and_touch) and notes that validate_and_touch mutates last_seen_at on every read."
+  },
+  {
+    "id": "case_supporting_claim",
+    "criterion": "Articulates the argument supporting the claim: in-memory dict lookups take microseconds whereas synchronous disk writes on every validate_and_touch call incur serialization, lock, and fsync overhead."
+  },
+  {
+    "id": "case_refuting_claim",
+    "criterion": "Articulates the counter-argument: SQLite WAL mode serves reads in under a millisecond, survives process restarts without logging out all active users, and enables multi-worker sharing on the same host."
+  },
+  {
+    "id": "identifies_write_amplification_factor",
+    "criterion": "Highlights the critical nuance in validate_and_touch: updating last_seen_at on every validation turns every read into a write transaction unless touch updates are batched or throttled."
+  },
+  {
+    "id": "conditional_verdict",
+    "criterion": "Synthesizes the conditions under which each design wins (e.g., SQLite WAL with coarse-grained touch throttling or in-memory read cache backed by periodic SQLite flush)."
+  }
+]

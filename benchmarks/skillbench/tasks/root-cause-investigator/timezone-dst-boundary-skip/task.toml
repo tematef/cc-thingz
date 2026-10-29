@@ -1,0 +1,8 @@
+target_skill = "root-cause-investigator"
+pilot = false
+timeout = 900
+prompt = """In this repository, tests/test_rollover.py has a failing test where recurring daily billing subscriptions scheduled at 01:30 local time skip an entire billing day after the spring daylight-saving transition and double-fire on the autumn transition, even though BillingPlanner converts timestamps to UTC before storing them. Investigate the codebase to determine the exact root causes and write a complete root-cause analysis (do not modify the source files)."""
+asks_user = false
+forbidden_terms = [
+  "root-cause-investigator",
+]

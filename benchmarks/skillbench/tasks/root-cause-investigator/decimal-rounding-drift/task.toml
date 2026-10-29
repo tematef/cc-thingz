@@ -1,0 +1,8 @@
+target_skill = "root-cause-investigator"
+pilot = false
+timeout = 900
+prompt = """In this repository, tests/test_reconcile.py has a failing test where splitting an invoice across proportional cost centers and applying a percentage discount leaves a 1-to-2 cent discrepancy between the sum of allocated line items and the invoice total, causing Reconciler.verify_invoice to fail. Investigate the codebase to identify the root causes and provide a thorough root-cause analysis (do not edit the source files)."""
+asks_user = false
+forbidden_terms = [
+  "root-cause-investigator",
+]

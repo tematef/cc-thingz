@@ -1,0 +1,26 @@
+target_skill = "exec"
+pilot = false
+timeout = 900
+verify = "python3 -m unittest discover -s tests -q"
+verify_restore = ["tests/test_baseline.py"]
+prompt = """Implement the plan in docs/plans/20261017-priority-scheduler.md to add priority ordering, FIFO tie-breaking, dependency prerequisite gating, and cancellation to jobqueue/scheduler.py, and ensure all unit tests pass."""
+asks_user = true
+user_answers = [
+  "Implement all tasks in the plan in order, run the unit tests in tests/, and keep everything self-contained in the repository without committing or pushing.",
+  "Proceed directly with the implementation and test verification.",
+  "Keep the plan file in place or mark its steps complete once all unit tests pass.",
+  "Yes, finish all remaining steps and verify with unittest.",
+]
+forbidden_terms = [
+  "exec",
+  "append-progress",
+  "create-branch",
+  "detect-branch",
+  "detect-vcs",
+  "init-progress",
+  "move-plan",
+  "resolve-file",
+  "resolve-project-dir",
+  "resolve-rules",
+  "run-external-review",
+]

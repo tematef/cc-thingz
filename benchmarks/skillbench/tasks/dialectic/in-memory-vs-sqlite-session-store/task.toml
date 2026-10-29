@@ -1,0 +1,14 @@
+target_skill = "dialectic"
+pilot = false
+timeout = 900
+prompt = """Is this really true for our auth gateway in sessionvault/: 'Moving SessionStore from an in-memory Python dict with RLock to local SQLite in WAL mode will make session lookups too slow for our sub-5ms SLA without adding meaningful durability.' Prove and counter-prove this statement against sessionvault/store.py and reach an objective synthesis."""
+asks_user = true
+user_answers = [
+  "Evaluate the claim directly against the code and workload constraints in this repository.",
+  "Include concrete code evidence from the fixture modules for both the argument in favor and the counter-argument.",
+  "Synthesize a conditional recommendation specifying the exact threshold or conditions where each side wins.",
+  "No code changes are needed; deliver the structured analysis.",
+]
+forbidden_terms = [
+  "dialectic",
+]

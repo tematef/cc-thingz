@@ -1,0 +1,10 @@
+target_skill = "code-review-refactor"
+pilot = false
+timeout = 900
+verify = "python3 -m unittest discover -s tests -q"
+verify_restore = ["tests/__init__.py", "tests/test_reconciler.py"]
+prompt = """taxrecon/reconciler.py has accumulated duplicated jurisdiction lookup, tiered tax bracket math, exemption handling, and summary formatting across compute_domestic_invoice and compute_export_invoice. Refactor taxrecon/reconciler.py into clean, modular helper functions and named constants while preserving the public functions (compute_domestic_invoice, compute_export_invoice, format_tax_line) and their exact outputs. Ensure all existing unit tests pass and add unit tests for the extracted helpers."""
+asks_user = false
+forbidden_terms = [
+  "code-review-refactor",
+]

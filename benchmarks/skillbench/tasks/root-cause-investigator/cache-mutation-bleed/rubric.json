@@ -1,0 +1,22 @@
+[
+  {
+    "id": "immediate_symptom",
+    "criterion": "Identifies the immediate symptom in quoteengine/billing.py (InvoiceBuilder.build_quote) where the standard customer's quote uses a discounted unit_cents of 1700 instead of 2000 (producing subtotal 8500 instead of 10000)."
+  },
+  {
+    "id": "inplace_tier_mutation",
+    "criterion": "Identifies that quoteengine/promotions.py (apply_promotion) mutates the nested tier dictionaries inside plan['tiers'] (specifically tier['unit_cents']) in place rather than constructing new tier records."
+  },
+  {
+    "id": "shallow_copy_defect",
+    "criterion": "Explains that quoteengine/catalog.py (PricingCatalog.get_plan) performs only a shallow copy via dict(entry), which leaves the nested 'tiers' list and its inner dictionaries shared by reference with the cached catalog plan."
+  },
+  {
+    "id": "singleton_cache_persistence",
+    "criterion": "Explains why creating a new InvoiceBuilder instance does not isolate requests: quoteengine/loader.py (load_catalog) caches and returns a shared PricingCatalog singleton in module-level _CATALOG_CACHE."
+  },
+  {
+    "id": "remediation_analysis",
+    "criterion": "Explains why a surface workaround (such as re-instantiating InvoiceBuilder or shallow-copying the top-level plan dict) is insufficient, and recommends deep-copying or immutable data structures for catalog plans/tiers along with non-mutating promotion calculation."
+  }
+]

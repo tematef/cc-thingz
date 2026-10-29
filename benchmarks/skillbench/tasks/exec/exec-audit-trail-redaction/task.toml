@@ -1,0 +1,26 @@
+target_skill = "exec"
+pilot = false
+timeout = 900
+verify = "python3 -m unittest discover -s tests -q"
+verify_restore = ["tests/test_baseline.py"]
+prompt = """Implement the implementation plan in docs/plans/20261015-audit-redaction.md to add recursive sensitive-field redaction and SHA-256 hash chaining to auditlog/logger.py, and make sure the unit test suite under tests/ passes."""
+asks_user = true
+user_answers = [
+  "Implement all tasks in the plan in order, run the unit tests in tests/, and keep everything self-contained in the repository without committing or pushing.",
+  "Proceed directly with the implementation and test verification.",
+  "Keep the plan file in place or mark its steps complete once all unit tests pass.",
+  "Yes, finish all remaining steps and verify with unittest.",
+]
+forbidden_terms = [
+  "exec",
+  "append-progress",
+  "create-branch",
+  "detect-branch",
+  "detect-vcs",
+  "init-progress",
+  "move-plan",
+  "resolve-file",
+  "resolve-project-dir",
+  "resolve-rules",
+  "run-external-review",
+]

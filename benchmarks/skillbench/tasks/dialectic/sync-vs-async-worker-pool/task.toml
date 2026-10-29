@@ -1,0 +1,14 @@
+target_skill = "dialectic"
+pilot = false
+timeout = 900
+prompt = """Stress test this claim against the ingestion service in ingestpool/: 'Replacing our bounded ThreadPoolExecutor in BatchIngestor with an asyncio event loop will double throughput and eliminate tail-latency spikes.' Argue both sides rigorously using the actual code in ingestpool/pipeline.py and provide a balanced verdict."""
+asks_user = true
+user_answers = [
+  "Evaluate the claim directly against the code and workload constraints in this repository.",
+  "Include concrete code evidence from the fixture modules for both the argument in favor and the counter-argument.",
+  "Synthesize a conditional recommendation specifying the exact threshold or conditions where each side wins.",
+  "No code changes are needed; deliver the structured analysis.",
+]
+forbidden_terms = [
+  "dialectic",
+]

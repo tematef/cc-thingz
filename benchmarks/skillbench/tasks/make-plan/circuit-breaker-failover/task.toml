@@ -1,0 +1,20 @@
+target_skill = "make-plan"
+pilot = false
+timeout = 900
+prompt = """We need to add a three-state circuit breaker (CLOSED, OPEN, HALF_OPEN) with automatic secondary upstream failover to proxyguard/client.py. Please write a detailed implementation plan in docs/plans/ for this feature without modifying any source code yet."""
+asks_user = true
+user_answers = [
+  "Keep everything self-contained in the existing package using the Python standard library only, and add comprehensive unit tests under tests/.",
+  "Preserve backward compatibility for existing callers while adding explicit data structures and error/status reporting for the new behavior.",
+  "Use an injectable clock or deterministic state store so unit tests run instantaneously without wall-clock sleeps.",
+  "Follow TDD with stdlib unittest.",
+  "Implementation Plan for Core Reliability Upgrade",
+  "Write the complete implementation plan file under docs/plans/ and stop without modifying production source files.",
+]
+forbidden_terms = [
+  "make-plan",
+  "launch-plan-review",
+  "plan-annotate",
+  "resolve-project-dir",
+  "resolve-rules",
+]

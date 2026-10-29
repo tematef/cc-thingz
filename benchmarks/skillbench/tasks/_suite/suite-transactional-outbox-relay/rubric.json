@@ -1,0 +1,22 @@
+[
+  {
+    "id": "plan_artifact_written",
+    "criterion": "Creates a plan document under docs/plans/ (active or completed/) detailing the OrderStore outbox staging and OutboxRelay.flush_pending workflow."
+  },
+  {
+    "id": "atomic_order_and_outbox_staging",
+    "criterion": "Stages an OutboxRecord whenever OrderStore.create_order succeeds (and stages nothing if order validation fails) in outboxrelay/engine.py."
+  },
+  {
+    "id": "ordered_idempotent_relay_flush",
+    "criterion": "Implements OutboxRelay.flush_pending(publisher) to deliver unsent outbox records in creation order, marking delivered records sent and tracking retry attempts on transient publisher exceptions."
+  },
+  {
+    "id": "unit_tests_cover_relay_lifecycle",
+    "criterion": "Adds unit tests under tests/ covering atomic staging, partial failure mid-flush, subsequent retry completion without re-sending already delivered records, and ordering."
+  },
+  {
+    "id": "clean_verification",
+    "criterion": "All unit tests under tests/ pass when run with python3 -m unittest discover -s tests."
+  }
+]

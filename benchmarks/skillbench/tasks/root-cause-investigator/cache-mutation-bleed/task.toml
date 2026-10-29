@@ -1,0 +1,10 @@
+target_skill = "root-cause-investigator"
+pilot = true
+timeout = 600
+prompt = """Running unittest in this repository fails in tests/test_quotes.py: after generating a promotional quote for a VIP customer, a brand-new InvoiceBuilder instance produces the wrong subtotal for a standard customer with no promo code. Investigate why this happens and write a thorough root-cause analysis explaining the full causal chain across the codebase and what needs to change to fix it properly (do not edit the source files)."""
+forbidden_terms = [
+  "root-cause-investigator",
+  "5-why",
+  "five whys",
+  "why #1",
+]
