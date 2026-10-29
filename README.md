@@ -14,6 +14,7 @@ This repository is a fork of [umputun/cc-thingz](https://github.com/umputun/cc-t
 - [Where plans and backlog items live](#where-plans-and-backlog-items-live)
 - [Custom rules](#custom-rules)
 - [Repository layout](#repository-layout)
+- [Benchmarking skills](#benchmarking-skills-benchmarksskillbench)
 - [Testing](#testing)
 - [Syncing with upstream](#syncing-with-upstream)
 
@@ -265,7 +266,7 @@ Ask `make-plan` or `brainstorm` to show, add or clear rules at either level (for
 `benchmarks/skillbench/suite.toml` and `benchmarks/skillbench/tasks/` define the evaluation suite and 28-task corpus (`brainstorm`, `make-plan`, `exec`, `root-cause-investigator`, `dialectic`, `code-review-refactor`, and 4 end-to-end `_suite` planning tasks) used by `harness2` (`skillbench-tasks`, `skillbench-matrix`, `skillbench-report`, `skillbench-improve`, `skillbench-cycle`):
 
 ```bash
-skillbench-tasks --suite benchmarks/skillbench/suite.toml check
+skillbench-tasks check --suite benchmarks/skillbench/suite.toml
 skillbench-cycle --suite benchmarks/skillbench/suite.toml --k 3 --arms both
 ```
 
